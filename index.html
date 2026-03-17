@@ -402,11 +402,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 const VORTRADES = [
-  // OFFENE TRADES
-  {id:1001,symbol:"VONT.FINL TURBOC LCOF",datum:"2026-03-13",ein:8.95,aus:null,menge:123,richtung:"kauf",notiz:"DE000VJ8KY51 – offen",offen:true},
+  // OFFENE TRADES (Stand 17.03.2026)
+  {id:1001,symbol:"VONT TURBOC LCOF",datum:"2026-03-13",ein:8.95,aus:10.29,menge:123,richtung:"kauf",notiz:"DE000VJ8KY51 – geschlossen 16.03",offen:false,ergebnis_fix:164.82},
   {id:1002,symbol:"VONT TURBOP B",datum:"2026-03-06",ein:12.02,aus:0.00,menge:247,richtung:"kauf",notiz:"DE000VX71725 – Totalverlust (Knock-Out)",ergebnis_fix:-2968.94},
   {id:1003,symbol:"ING BANK TURBOL XAG",datum:"2026-03-02",ein:10.37,aus:null,menge:191,richtung:"kauf",notiz:"DE000NB5NFH7 – offen",offen:true},
-  {id:1050,symbol:"MS CO.I. TURBOS RHM",datum:"2026-03-13",ein:22.19,aus:null,menge:47,richtung:"kauf",notiz:"DE000MN2C093 – offen",offen:true},
+  {id:1050,symbol:"MS CO.I. TURBOS RHM",datum:"2026-03-13",ein:22.19,aus:19.35,menge:47,richtung:"kauf",notiz:"DE000MN2C093 – geschlossen 16.03",offen:false,ergebnis_fix:-133.48},
+  // NEUE TRADES 16.03.2026
+  {id:2001,symbol:"BNP TURBOL XAU",datum:"2026-03-16",ein:33.96,aus:34.46,menge:88,richtung:"kauf",notiz:"DE000BY2D1L2"},
+  {id:2002,symbol:"JPM MINIS DAX",datum:"2026-03-16",ein:31.60,aus:30.81,menge:63,richtung:"kauf",notiz:"DE000JF8FVL8"},
+  {id:2003,symbol:"VONT TURBOP26 XAG",datum:"2026-03-16",ein:5.80,aus:5.99,menge:256,richtung:"kauf",notiz:"DE000VJ78TA8"},
+  {id:2004,symbol:"BNP TURBOL LCOF (PK8XJ71-A)",datum:"2026-03-16",ein:11.09,aus:11.42,menge:444,richtung:"kauf",notiz:"DE000PK8XJ71"},
+  {id:2005,symbol:"BNP TURBOL LCOF (PK8XJ71-B)",datum:"2026-03-16",ein:12.61,aus:12.41,menge:396,richtung:"kauf",notiz:"DE000PK8XJ71"},
+  {id:2006,symbol:"BNP TURBOS LCOF",datum:"2026-03-16",ein:13.35,aus:14.14,menge:381,richtung:"kauf",notiz:"DE000PK8UZR0"},
+  {id:2007,symbol:"JPM MINIL XAG",datum:"2026-03-16",ein:9.09,aus:9.81,menge:322,richtung:"kauf",notiz:"DE000JZ5PS17"},
+  {id:2008,symbol:"BNP TURBOL XAU (PK5BDC5)",datum:"2026-03-16",ein:62.21,aus:60.00,menge:32,richtung:"kauf",notiz:"DE000PK5BDC5"},
+  // NEUE TRADES 17.03.2026
+  {id:2009,symbol:"VONT TURBOP LCOF",datum:"2026-03-17",ein:13.53,aus:15.10,menge:370,richtung:"kauf",notiz:"DE000VJ76GP7"},
+  {id:2010,symbol:"L+S TURBOC BTC",datum:"2026-03-17",ein:0.93,aus:0.91,menge:2083,richtung:"kauf",notiz:"DE000LX8CLY3"},
+  {id:2011,symbol:"JPM TURBOL DAX",datum:"2026-03-17",ein:34.16,aus:34.16,menge:146,richtung:"kauf",notiz:"DE000JH1UAD1"},
+  // OFFENE POSITIONEN 17.03.2026
+  {id:2012,symbol:"ING TURBOS LCOF",datum:"2026-03-17",ein:11.01,aus:null,menge:460,richtung:"kauf",notiz:"DE000NB5V8A8 – offen",offen:true},
+  {id:2013,symbol:"BNP TURBOL XAU",datum:"2026-03-17",ein:54.42,aus:null,menge:110,richtung:"kauf",notiz:"DE000BY1M3V7 – offen",offen:true},
+  {id:2014,symbol:"UNICREDIT TUBULL RHM",datum:"2026-03-17",ein:19.28,aus:null,menge:157,richtung:"kauf",notiz:"DE000UG5VCB6 – offen",offen:true},
   // ABGESCHLOSSENE TRADES (chronologisch rückwärts)
   {id:1004,symbol:"JPM MINIS DAX",datum:"2026-03-13",ein:34.00,aus:35.10,menge:88,richtung:"kauf",notiz:"DE000J0J0B0"},
   {id:1005,symbol:"BNP TURBOS XAU",datum:"2026-03-13",ein:62.73,aus:67.04,menge:47,richtung:"kauf",notiz:"DE000PK52LA0"},
@@ -470,7 +487,7 @@ function berechneProzent(t) {
   return ((t.aus - t.ein) / t.ein * 100) * (t.richtung === 'leer' ? -1 : 1);
 }
 
-let trades = JSON.parse(localStorage.getItem('handelstagebuch_v8') || 'null');
+let trades = JSON.parse(localStorage.getItem('handelstagebuch_v9') || 'null');
 if (!trades) {
   trades = VORTRADES.map(t => ({
     ...t,
@@ -519,7 +536,7 @@ function toast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-function speichern() { localStorage.setItem('handelstagebuch_v8', JSON.stringify(trades)); }
+function speichern() { localStorage.setItem('handelstagebuch_v9', JSON.stringify(trades)); }
 
 // ─── Navigation ───
 function zeigSeite(seite, el) {
