@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Handelstagebuch</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+    :root {
+      --orange:#FFA600; --orange-dark:#996400; --orange-light:#FFE9CC; --orange-pale:#FFFDDF;
+      --ice:#75E1C3;
+      --txt:#111; --muted:#4b5563; --card:#fff; --bg:#f7f7fb; --border:#e5e7eb;
+      --shadow:0 8px 24px rgba(0,0,0,.08); --r:18px;
+      --gewinn:#16a34a; --gewinn-bg:#f0fdf4; --verlust:#dc2626; --verlust-bg:#fff5f5;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:'Montserrat',-apple-system,sans-serif;font-size:16px;overflow-x:hidden}
+    html{overflow-x:hidden}
+    .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,var(--orange),#ffbe3b);color:#111;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+    .topbar-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand-icon{font-size:26px;line-height:1}
+    .brand-name{font-weight:800;font-size:16px;line-height:1.1}
+    .brand-sub{font-size:12px;opacity:.8}
+    .spacer{flex:1}
+    @media(max-width:600px){.brand-text{display:none}}
+    .speichern-topbar{display:flex;align-items:center;gap:6px;background:#fff;color:#111;border:none;border-radius:12px;padding:8px 14px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;min-height:40px;white-space:nowrap}
+    /* Bottom Nav */
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--border);display:flex;box-shadow:0 -4px 20px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom)}
+    .bottom-tab{flex:1;padding:10px 4px 8px;border:none;background:transparent;color:var(--muted);font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
+    .bottom-tab.aktiv{color:var(--orange-dark)}
+    .bottom-tab.aktiv .bottom-icon{background:var(--orange-pale);border-radius:10px}
+    .bottom-icon{font-size:22px;padding:4px 14px;border-radius:10px;transition:all .15s}
+    /* Layout */
+    .container{max-width:1100px;margin:16px auto;padding:0 16px 90px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:14px}
+    .card-h{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700}
+    .card-b{padding:14px 18px}
+    /* KPI */
+    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+    .kpi2{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+    @media(max-width:600px){.kpi{grid-template-columns:repeat(2,1fr)}.kpi2{grid-template-columns:repeat(2,1fr)}}
+    .kpi-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    .kpi-box.orange-top{border-top:3px solid var(--orange)}
+    .kpi-box.gewinn-top{border-top:3px solid var(--gewinn)}
+    .kpi-box.verlust-top{border-top:3px solid var(--verlust)}
+    .kpi-box.ice-top{border-top:3px solid var(--ice)}
+    .kpi-label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.7px;text-transform:uppercase;margin-bottom:6px}
+    .kpi-value{font-weight:800;font-size:20px;line-height:1;font-variant-numeric:tabular-nums}
+    .kpi-value.gewinn{color:var(--gewinn)}
+    .kpi-value.verlust{color:var(--verlust)}
+    .kpi-value.orange{color:var(--orange-dark)}
+    .kpi-sub{font-size:11px;color:var(--muted);font-weight:600;margin-top:5px}
+    .trefferbalken-wrap{background:var(--bg);border-radius:6px;height:6px;margin-top:8px;overflow:hidden;border:1px solid var(--border)}
+    .trefferbalken{height:100%;background:linear-gradient(90deg,var(--ice),var(--orange));border-radius:6px;transition:width .7s}
+    /* Periodenbalken */
+    .perioden-zeile{margin-bottom:12px}
+    .perioden-kopf{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+    .perioden-label{font-size:13px;font-weight:700}
+    .perioden-wert{font-size:13px;font-weight:800}
+    .perioden-bar-wrap{display:flex;align-items:center;gap:8px}
+    .perioden-bar-bg{flex:1;background:var(--bg);border-radius:6px;height:8px;overflow:hidden;border:1px solid var(--border)}
+    .perioden-bar-fill{height:100%;border-radius:6px;opacity:.75}
+    .perioden-meta{font-size:11px;color:var(--muted);white-space:nowrap;font-weight:600}
+    /* Basiswert */
+    .bw-zeile{margin-bottom:12px}
+    /* Formular */
+    .formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+    .formgrid.drei{grid-template-columns:1fr 1fr 1fr}
+    @media(max-width:520px){.formgrid,.formgrid.drei{grid-template-columns:1fr}}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+    input,select{width:100%;padding:11px 12px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);font-size:16px;font-family:'Montserrat',sans-serif;min-height:44px;color:var(--txt);transition:border-color .15s}
+    input:focus,select:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,166,0,.15)}
+    /* Status-Buttons */
+    .status-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+    .status-btn{padding:10px 6px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Montserrat',sans-serif;min-height:44px}
+    .aktiv-status{border-color:var(--orange);color:var(--orange-dark);background:var(--orange-pale)}
+    /* Richtungs-Buttons */
+    .richtung-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .richtung-btn{padding:11px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Montserrat',sans-serif;min-height:44px}
+    .aktiv-kauf{border-color:var(--gewinn);color:var(--gewinn);background:var(--gewinn-bg)}
+    .aktiv-leer{border-color:var(--verlust);color:var(--verlust);background:var(--verlust-bg)}
+    /* Vorschau */
+    .vorschau-box{display:none;background:var(--orange-pale);border:1.5px solid var(--orange-light);border-radius:12px;padding:12px 16px;margin-bottom:10px}
+    /* Buttons */
+    .btn{border:none;border-radius:14px;padding:10px 16px;cursor:pointer;background:#111;color:#fff;font-weight:700;font-size:15px;font-family:'Montserrat',sans-serif;transition:.15s;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+    .btn:active{transform:scale(.98);opacity:.9}
+    .btn.orange{background:var(--orange);color:#111}
+    .btn.full{width:100%}
+    .btn.small{padding:6px 10px;font-size:12px;min-height:36px;border-radius:10px}
+    .btn.ghost{background:#fff;color:#111;border:1px solid var(--border)}
+    /* Verlauf Tabelle */
+    .verlauf-tabelle{width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif}
+    .verlauf-tabelle th{text-align:left;padding:9px 10px;background:var(--bg);border-bottom:2px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+    .verlauf-tabelle td{padding:9px 10px;border-bottom:1px solid #eef0f8;vertical-align:middle;white-space:nowrap}
+    .verlauf-tabelle tr:last-child td{border-bottom:none}
+    .verlauf-tabelle tr:hover td{background:var(--bg)}
+    .verlauf-tabelle .t-gewinn{color:var(--gewinn);font-weight:800}
+    .verlauf-tabelle .t-verlust{color:var(--verlust);font-weight:800}
+    .td-sym{font-weight:800;max-width:130px;overflow:hidden;text-overflow:ellipsis;display:block}
+    .td-notiz{color:var(--muted);font-size:11px;font-weight:500;display:block;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+    .dir-chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+    .dir-chip.kauf{background:var(--gewinn-bg);color:var(--gewinn)}
+    .dir-chip.leer{background:var(--verlust-bg);color:var(--verlust)}
+    /* Offene Positionen */
+    .offen-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .offen-row:last-child{border-bottom:none}
+    .offen-sym{font-weight:800;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .offen-sub{color:var(--muted);font-size:11px;font-weight:500}
+    .offen-kosten{color:var(--verlust);font-size:13px;font-weight:800;white-space:nowrap;margin-right:6px}
+    /* Badges */
+    .richtungs-badge{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+    .richtungs-badge.kauf{background:var(--gewinn-bg);color:var(--gewinn)}
+    .richtungs-badge.leer{background:var(--verlust-bg);color:var(--verlust)}
+    .richtungs-badge.offen{background:var(--orange-light);color:var(--orange-dark)}
+    /* Eintrag-Karten (Übersicht letzte) */
+    .eintrag{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,.04);margin-bottom:8px}
+    .eintrag.gewinn-eintrag{border-left:4px solid var(--gewinn)}
+    .eintrag.verlust-eintrag{border-left:4px solid var(--verlust)}
+    .eintrag.offen-eintrag{border-left:4px solid var(--orange);background:var(--orange-pale)}
+    .eintrag-info{min-width:0}
+    .eintrag-symbol{font-size:14px;font-weight:800}
+    .eintrag-meta{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .eintrag-ergebnis{text-align:right}
+    .ergebnis-betrag{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+    .ergebnis-betrag.gewinn{color:var(--gewinn)}
+    .ergebnis-betrag.verlust{color:var(--verlust)}
+    .ergebnis-betrag.offen{color:var(--orange-dark)}
+    .ergebnis-prozent{font-size:11px;font-weight:600;margin-top:2px}
+    .ergebnis-prozent.gewinn{color:#4ade80}
+    .ergebnis-prozent.verlust{color:#f87171}
+    /* Filterleiste */
+    .filterleiste{display:flex;gap:7px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+    .filter-btn{flex-shrink:0;padding:7px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'Montserrat',sans-serif;min-height:36px}
+    .filter-btn.aktiv{background:var(--orange-light);border-color:var(--orange);color:var(--orange-dark)}
+    .loeschen-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:18px;padding:4px;line-height:1;border-radius:6px;min-width:28px;min-height:28px;display:flex;align-items:center;justify-content:center}
+    .loeschen-btn:hover{color:var(--verlust);background:var(--verlust-bg)}
+    /* Seiten */
+    .seite{display:none}
+    .seite.aktiv{display:block}
+    /* Modals */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:100;padding:16px}
+    .modal-overlay.offen{display:flex}
+    .modal-panel{background:#fff;border-radius:22px;padding:24px 20px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+    @media(max-width:600px){.modal-overlay{padding:0;align-items:flex-end}.modal-panel{border-radius:22px 22px 0 0;max-height:95vh}}
+    .modal-panel h3{font-size:17px;font-weight:800;margin-bottom:6px}
+    .modal-panel .info{font-size:13px;color:var(--muted);font-weight:500;margin-bottom:16px;line-height:1.5}
+    .modal-close{width:100%;padding:13px;margin-top:6px;background:#111;color:#fff;border:none;border-radius:14px;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+    /* Toast */
+    .toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 18px;border-radius:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.2s opacity ease;z-index:200;font-weight:600;font-size:14px;white-space:nowrap}
+    .toast.show{opacity:1}
+    /* iPad Modal */
+    .ipad-schritt{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px}
+    .ipad-nr{width:30px;height:30px;border-radius:50%;background:var(--orange);color:#111;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .ipad-text{font-size:13px;font-weight:600;color:var(--txt);line-height:1.5;padding-top:4px}
+    .ipad-text span{color:var(--orange-dark);font-weight:700}
+    /* Leer */
+    .leer{text-align:center;padding:36px 20px;color:var(--muted)}
+    .leer .symbol{font-size:36px;margin-bottom:10px}
+    .leer .text{font-size:13px;line-height:1.7;font-weight:500}
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-icon">📈</div>
+      <div class="brand-text">
+        <div class="brand-name">Handelstagebuch</div>
+        <div class="brand-sub">Knock-Out &amp; Turbo Journal</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="speichern-topbar" onclick="zeigeIpadAnleitung()">💾 Speichern</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══ ÜBERSICHT ═══ -->
+<div class="seite aktiv" id="seite-uebersicht">
+
+  <div class="kpi">
+    <div class="kpi-box gewinn-top">
+      <div class="kpi-label">Realisiertes Ergebnis</div>
+      <div class="kpi-value" id="gesamtErgebnis">–</div>
+      <div class="kpi-sub" id="gesamtSub">–</div>
+    </div>
+    <div class="kpi-box orange-top">
+      <div class="kpi-label">Trefferquote</div>
+      <div class="kpi-value gewinn" id="trefferquote">–</div>
+      <div class="trefferbalken-wrap"><div class="trefferbalken" id="trefferBalken" style="width:0%"></div></div>
+    </div>
+    <div class="kpi-box ice-top">
+      <div class="kpi-label">Trades</div>
+      <div class="kpi-value orange" id="anzahlTrades">–</div>
+      <div class="kpi-sub" id="offenSub">–</div>
+    </div>
+  </div>
+
+  <div class="kpi2">
+    <div class="kpi-box orange-top">
+      <div class="kpi-label">Ø pro Tag</div>
+      <div class="kpi-value" id="avgTag">–</div>
+      <div class="kpi-sub" id="avgTagSub">–</div>
+    </div>
+    <div class="kpi-box orange-top">
+      <div class="kpi-label">Ø pro Woche</div>
+      <div class="kpi-value" id="avgWoche">–</div>
+    </div>
+    <div class="kpi-box orange-top">
+      <div class="kpi-label">Ø pro Monat</div>
+      <div class="kpi-value" id="avgMonat">–</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">📅 Wochenübersicht</div>
+    <div class="card-b" id="wochenStats"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">🗓 Monatsübersicht</div>
+    <div class="card-b" id="monatsStats"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">🎯 Basiswert-Statistik</div>
+    <div class="card-b" id="basiswertStats"></div>
+  </div>
+
+</div>
+
+<!-- ═══ EINTRAGEN ═══ -->
+<div class="seite" id="seite-eintragen">
+  <div class="card">
+    <div class="card-h">➕ Neuen Trade eintragen</div>
+    <div class="card-b">
+      <div class="formgrid">
+        <div><label>Kürzel / Symbol</label><input type="text" id="symbol" placeholder="z.B. DAX Turbo" autocomplete="off" autocapitalize="characters"></div>
+        <div><label>Kaufdatum</label><input type="date" id="handelsDatum"></div>
+      </div>
+      <div class="formgrid drei">
+        <div><label>Einstiegskurs (€)</label><input type="text" inputmode="decimal" id="einstieg" placeholder="z.B. 12,50"></div>
+        <div><label>Menge / Stück</label><input type="number" id="menge" placeholder="1" step="1" inputmode="numeric"></div>
+        <div>
+          <label>Richtung</label>
+          <div class="richtung-btns">
+            <button class="richtung-btn aktiv-kauf" id="btnKauf" onclick="setzeRichtung('kauf')">▲ Kauf</button>
+            <button class="richtung-btn" id="btnLeer" onclick="setzeRichtung('leer')">▼ Leer</button>
+          </div>
+        </div>
+      </div>
+      <label>Status</label>
+      <div class="status-btns">
+        <button class="status-btn aktiv-status" id="sBtnOffen" onclick="setzeStatus('offen')">🟡 Offen</button>
+        <button class="status-btn" id="sBtnGeschlossen" onclick="setzeStatus('geschlossen')">✅ Geschlossen</button>
+        <button class="status-btn" id="sBtnTotal" onclick="setzeStatus('total')">💀 Totalverlust</button>
+      </div>
+      <div id="ausstiegFelder" style="display:none">
+        <div class="formgrid">
+          <div><label>Ausstiegskurs (€)</label><input type="text" inputmode="decimal" id="ausstieg" placeholder="z.B. 14,57"></div>
+          <div><label>Ausstiegsdatum</label><input type="date" id="ausstiegDatum"></div>
+        </div>
+      </div>
+      <div class="formgrid" style="margin-bottom:10px">
+        <div><label>Notiz (optional)</label><input type="text" id="notiz" placeholder="ISIN, Strategie..." autocomplete="off"></div>
+      </div>
+      <div class="vorschau-box" id="vorschauBox">
+        <div style="font-size:11px;color:var(--orange-dark);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px">Voraussichtliches Ergebnis</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span id="vorschauBetrag" style="font-size:20px;font-weight:800"></span>
+          <span id="vorschauProzent" style="font-size:14px;font-weight:700"></span>
+        </div>
+      </div>
+      <button class="btn orange full" onclick="speichereTrade()">Trade speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ VERLAUF ═══ -->
+<div class="seite" id="seite-verlauf">
+
+  <div class="card" id="offeneKarte">
+    <div class="card-h">🟡 Offene Positionen</div>
+    <div class="card-b" id="offeneListe"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">📋 Abgeschlossene Trades</div>
+    <div class="card-b">
+      <div class="filterleiste">
+        <button class="filter-btn aktiv" onclick="setzeFilter('alle',this)">Alle</button>
+        <button class="filter-btn" onclick="setzeFilter('gewinn',this)">✅ Gewinne</button>
+        <button class="filter-btn" onclick="setzeFilter('verlust',this)">❌ Verluste</button>
+        <button class="filter-btn" onclick="setzeFilter('kauf',this)">▲ Käufe</button>
+        <button class="filter-btn" onclick="setzeFilter('leer',this)">▼ Leer</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:700;color:var(--muted)" id="verlaufAnzahl">–</span>
+        <button class="btn ghost small" onclick="exportCSV()">⬇ CSV</button>
+      </div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table class="verlauf-tabelle">
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Symbol</th>
+              <th>Art</th>
+              <th style="text-align:right">Stück</th>
+              <th style="text-align:right">Einstieg</th>
+              <th style="text-align:right">Ausstieg</th>
+              <th style="text-align:right">Ergebnis</th>
+              <th style="text-align:right">%</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="verlaufBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- ═══ BOTTOM NAV ═══ -->
+<div class="bottom-nav">
+  <button class="bottom-tab aktiv" id="bTab0" onclick="zeigSeite('uebersicht',this)">
+    <span class="bottom-icon">📊</span>
+    <span>Übersicht</span>
+  </button>
+  <button class="bottom-tab" id="bTab1" onclick="zeigSeite('eintragen',this)">
+    <span class="bottom-icon">➕</span>
+    <span>Eintragen</span>
+  </button>
+  <button class="bottom-tab" id="bTab2" onclick="zeigSeite('verlauf',this)">
+    <span class="bottom-icon">📋</span>
+    <span>Verlauf</span>
+  </button>
+</div>
+
+<!-- ═══ MODAL: SCHLIESSEN ═══ -->
+<div class="modal-overlay" id="schliessenModal" onclick="if(event.target===this)this.classList.remove('offen')">
+  <div class="modal-panel">
+    <h3 id="schliessenTitel">Position schließen</h3>
+    <p class="info" id="schliessenInfo"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <button class="status-btn aktiv-status" id="mBtnGeschlossen" onclick="setzeSchliessenStatus('geschlossen')">✅ Geschlossen</button>
+      <button class="status-btn" id="mBtnTotal" onclick="setzeSchliessenStatus('total')">💀 Totalverlust</button>
+    </div>
+    <div id="schliessenKursFelder">
+      <div class="formgrid" style="margin-bottom:12px">
+        <div><label>Ausstiegskurs (€)</label><input type="text" inputmode="decimal" id="schliessenKurs" placeholder="z.B. 14,57" style="font-size:18px;font-weight:700"></div>
+        <div><label>Datum</label><input type="date" id="schliessenDatum"></div>
+      </div>
+    </div>
+    <div id="schliessenVorschau" style="display:none;border-radius:12px;padding:12px;margin-bottom:12px;font-size:16px;font-weight:800;text-align:center"></div>
+    <button class="btn orange full" onclick="bestaetigeSchliessen()" style="margin-bottom:8px">Position schließen</button>
+    <button class="modal-close" onclick="document.getElementById('schliessenModal').classList.remove('offen')">Abbrechen</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL: BEARBEITEN ═══ -->
+<div class="modal-overlay" id="bearbeitenModal" onclick="if(event.target===this)this.classList.remove('offen')">
+  <div class="modal-panel">
+    <h3 id="bearbeitenTitel">Trade bearbeiten</h3>
+    <p class="info" id="bearbeitenInfo"></p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+      <div><label>Symbol</label><input type="text" id="bearbeitenSymbol" autocapitalize="characters"></div>
+      <div class="formgrid">
+        <div><label>Einstiegskurs (€)</label><input type="text" inputmode="decimal" id="bearbeitenEin" style="font-size:16px;font-weight:700"></div>
+        <div><label>Ausstiegskurs (€)</label><input type="text" inputmode="decimal" id="bearbeitenAus" placeholder="0 = Totalverlust" style="font-size:16px;font-weight:700"></div>
+      </div>
+      <div><label>Notiz / ISIN</label><input type="text" id="bearbeitenNotiz"></div>
+    </div>
+    <div id="bearbeitenVorschau" style="display:none;border-radius:12px;padding:12px;margin-bottom:12px;font-size:16px;font-weight:800;text-align:center"></div>
+    <button class="btn orange full" onclick="bestaetigeBearbeiten()" style="margin-bottom:8px">Speichern</button>
+    <button class="modal-close" onclick="document.getElementById('bearbeitenModal').classList.remove('offen')">Abbrechen</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL: SPEICHERN/IPAD ═══ -->
+<div class="modal-overlay" id="ipadModal" onclick="if(event.target===this)this.classList.remove('offen')">
+  <div class="modal-panel">
+    <h3>📱 App auf iPad speichern</h3>
+    <p class="info">So richtest du das Handelstagebuch dauerhaft ein:</p>
+    <div class="ipad-schritt"><div class="ipad-nr">1</div><div class="ipad-text">In Safari unten auf das <span>Teilen-Symbol</span> tippen (Quadrat mit Pfeil)</div></div>
+    <div class="ipad-schritt"><div class="ipad-nr">2</div><div class="ipad-text">Wähle <span>„Zum Home-Bildschirm"</span></div></div>
+    <div class="ipad-schritt"><div class="ipad-nr">3</div><div class="ipad-text">Namen bestätigen → <span>„Hinzufügen"</span> – fertig ✅</div></div>
+    <button class="btn orange full" onclick="ladeHerunter()" style="margin-bottom:8px">⬇ HTML-Datei herunterladen</button>
+    <button class="modal-close" onclick="document.getElementById('ipadModal').classList.remove('offen')">Schließen</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const VORTRADES = [
+  // OFFENE TRADES
+  {id:1001,symbol:"VONT.FINL TURBOC LCOF",datum:"2026-03-13",ein:8.95,aus:null,menge:123,richtung:"kauf",notiz:"DE000VJ8KY51 – offen",offen:true},
+  {id:1002,symbol:"VONT TURBOP B",datum:"2026-03-06",ein:12.02,aus:0.00,menge:247,richtung:"kauf",notiz:"DE000VX71725 – Totalverlust (Knock-Out)",ergebnis_fix:-2968.94},
+  {id:1003,symbol:"ING BANK TURBOL XAG",datum:"2026-03-02",ein:10.37,aus:null,menge:191,richtung:"kauf",notiz:"DE000NB5NFH7 – offen",offen:true},
+  {id:1050,symbol:"MS CO.I. TURBOS RHM",datum:"2026-03-13",ein:22.19,aus:null,menge:47,richtung:"kauf",notiz:"DE000MN2C093 – offen",offen:true},
+  // ABGESCHLOSSENE TRADES (chronologisch rückwärts)
+  {id:1004,symbol:"JPM MINIS DAX",datum:"2026-03-13",ein:34.00,aus:35.10,menge:88,richtung:"kauf",notiz:"DE000J0J0B0"},
+  {id:1005,symbol:"BNP TURBOS XAU",datum:"2026-03-13",ein:62.73,aus:67.04,menge:47,richtung:"kauf",notiz:"DE000PK52LA0"},
+  {id:1006,symbol:"BNP X-TUL26 DAX",datum:"2026-03-13",ein:7.66,aus:8.01,menge:156,richtung:"kauf",notiz:"DE000PK5GL63"},
+  {id:1007,symbol:"BNP TURBOL LCOF",datum:"2026-03-13",ein:11.82,aus:14.57,menge:343,richtung:"kauf",notiz:"DE000PK8V5C3 – 93St@11,63 + 250St@11,88",ergebnis_fix:945.92},
+  {id:1008,symbol:"JPM TURBOS DAX",datum:"2026-03-12",ein:40.08,aus:41.33,menge:124,richtung:"kauf",notiz:"DE000JF7TZL2 – 37@40,34 + 37@39,62 + 50@40,44",ergebnis_fix:144.40},
+  {id:1009,symbol:"VONT TURBOC XAU",datum:"2026-03-11",ein:70.18,aus:66.19,menge:179,richtung:"kauf",notiz:"DE000VJ0ZR77 – mehrere Käufe",ergebnis_fix:-706.43},
+  {id:1010,symbol:"VONT TURBOC LCOF (HKN3)",datum:"2026-03-12",ein:10.32,aus:10.43,menge:390,richtung:"kauf",notiz:"DE000VJ8HKN3 – 103@10,07 + 287@10,44",ergebnis_fix:34.21},
+  {id:1011,symbol:"VONT TURBOC LCOF (HKX2)",datum:"2026-03-12",ein:14.39,aus:15.94,menge:207,richtung:"kauf",notiz:"DE000VJ8HKX2"},
+  {id:1012,symbol:"ING TURBOL XAG (L9E0)",datum:"2026-03-12",ein:10.74,aus:11.36,menge:186,richtung:"kauf",notiz:"DE000NB5L9E0"},
+  {id:1013,symbol:"ING TURBOL LCOF (RAN7)",datum:"2026-03-12",ein:18.96,aus:20.08,menge:105,richtung:"kauf",notiz:"DE000NB5RAN7"},
+  {id:1014,symbol:"BNP TURBOL LCOF (ME20)",datum:"2026-03-12",ein:13.90,aus:14.83,menge:217,richtung:"kauf",notiz:"DE000PK8ME20"},
+  {id:1015,symbol:"VONT MINIL BTC",datum:"2026-03-12",ein:12.23,aus:12.83,menge:245,richtung:"kauf",notiz:"DE000VJ8ERF1"},
+  {id:1016,symbol:"ING TURBOL LCOF (RA26)",datum:"2026-03-11",ein:13.6451,aus:18.26,menge:475,richtung:"kauf",notiz:"DE000NB5RA26 – 88@17,01 + 387@12,88"},
+  {id:1017,symbol:"UNICREDIT TUBULL RHM",datum:"2026-03-11",ein:14.61,aus:18.06,menge:100,richtung:"kauf",notiz:"DE000UG555P0"},
+  {id:1018,symbol:"VONT TURBOC RHM (VH98)",datum:"2026-03-11",ein:6.24,aus:9.76,menge:142,richtung:"kauf",notiz:"DE000VH98L89"},
+  {id:1019,symbol:"UNICREDIT MINIBU RHM",datum:"2026-03-11",ein:22.87,aus:26.49,menge:86,richtung:"kauf",notiz:"DE000UG2T0F5"},
+  {id:1020,symbol:"VONT TURBOC XAU (ZRX6)",datum:"2026-03-05",ein:73.99,aus:75.44,menge:67,richtung:"kauf",notiz:"DE000VJ0ZRX6"},
+  {id:1021,symbol:"BNP TURBOL LCOF (797E3)",datum:"2026-03-11",ein:10.11,aus:13.15,menge:394,richtung:"kauf",notiz:"DE000PK797E3"},
+  {id:1022,symbol:"VONT TURBOC RHM (J1TBL6)",datum:"2026-03-02",ein:14.08,aus:6.22,menge:100,richtung:"kauf",notiz:"DE000VJ1TBL6"},
+  {id:1023,symbol:"VONT MINIL LCOF",datum:"2026-03-05",ein:12.44,aus:13.34,menge:239,richtung:"kauf",notiz:"DE000VJ66XW9"},
+  {id:1024,symbol:"ING TURBOL XAG (L8X2)",datum:"2026-03-04",ein:8.04,aus:9.41,menge:617,richtung:"kauf",notiz:"DE000NB5L8X2"},
+  {id:1025,symbol:"BNP MINIL LCOF (790X8)",datum:"2026-03-04",ein:10.25,aus:12.10,menge:288,richtung:"kauf",notiz:"DE000PK790X8"},
+  {id:1026,symbol:"JPM TURBOS XAG",datum:"2026-03-04",ein:10.11,aus:9.52,menge:392,richtung:"kauf",notiz:"DE000JZ703Z7"},
+  {id:1027,symbol:"ING TURBOL XAG (L8T0)",datum:"2026-03-04",ein:9.95,aus:7.05,menge:490,richtung:"kauf",notiz:"DE000NB5L8T0"},
+  {id:1028,symbol:"ING TURBOS XAG (RLP9)",datum:"2026-03-04",ein:10.8130,aus:11.43,menge:593,richtung:"kauf",notiz:"DE000NB5RLP9 – 454@10,82 + 139@10,80",ergebnis_fix:364.51},
+  {id:1029,symbol:"ING TURBOL LCOF (PYN1)",datum:"2026-03-04",ein:9.87,aus:10.60,menge:400,richtung:"kauf",notiz:"DE000NB5PYN1"},
+  {id:1030,symbol:"ING TURBOL XAG (GE58)",datum:"2026-03-03",ein:10.49,aus:13.08,menge:142,richtung:"kauf",notiz:"DE000NB5GE58"},
+  {id:1031,symbol:"JPM TURBOS DAX (JF3ZUD6)",datum:"2026-02-24",ein:35.58,aus:38.72,menge:41,richtung:"kauf",notiz:"DE000JF3ZUD6"},
+  {id:1032,symbol:"VONT MINIS XAU",datum:"2026-03-02",ein:43.95,aus:44.11,menge:25,richtung:"kauf",notiz:"DE000VJ33J48"},
+  {id:1033,symbol:"VONT MINIS Netflix",datum:"2026-02-27",ein:1.10,aus:1.19,menge:1000,richtung:"kauf",notiz:"DE000VJ0P7H4 – Basiswert: Netflix (Xetra: NFC)"},
+  {id:1034,symbol:"VONT TURBOC GC (J4PBD5)",datum:"2026-02-27",ein:63.53,aus:67.97,menge:31,richtung:"kauf",notiz:"DE000VJ4PBD5"},
+  {id:1035,symbol:"BNP MINIL LCOF (PK6ZJM8)",datum:"2026-02-24",ein:8.42,aus:8.80,menge:177,richtung:"kauf",notiz:"DE000PK6ZJM8"},
+  {id:1036,symbol:"BNP TURBOS DAX",datum:"2026-02-23",ein:63.42,aus:65.67,menge:31,richtung:"kauf",notiz:"DE000PJ5AK21"},
+  {id:1037,symbol:"BNP TURBOL LCOF (PG0XN48)",datum:"2026-02-20",ein:15.08,aus:15.83,menge:98,richtung:"kauf",notiz:"DE000PG0XN48"},
+  {id:1038,symbol:"VONT MINIL XAU",datum:"2026-02-19",ein:59.99,aus:65.76,menge:23,richtung:"kauf",notiz:"DE000VJ16026"},
+  {id:1039,symbol:"JPM TURBOS DAX (JX6FDT1)",datum:"2026-02-19",ein:31.28,aus:31.65,menge:38,richtung:"kauf",notiz:"DE000JX6FDT1"},
+  {id:1040,symbol:"BNP TURBOL B",datum:"2026-02-19",ein:14.97,aus:15.77,menge:100,richtung:"kauf",notiz:"DE000PH9JXT7"},
+  {id:1041,symbol:"ING TURBOS XAG (NB5FW32)",datum:"2026-02-18",ein:11.99,aus:11.15,menge:97,richtung:"kauf",notiz:"DE000NB5FW32"},
+  {id:1042,symbol:"JPM MINIS ENR",datum:"2026-02-18",ein:3.99,aus:4.30,menge:370,richtung:"kauf",notiz:"DE000JZ45KM2"},
+  {id:1043,symbol:"ING TURBOL XAG (NB4NQH7)",datum:"2026-02-17",ein:14.37,aus:16.88,menge:102,richtung:"kauf",notiz:"DE000NB4NQH7"},
+  {id:1044,symbol:"VONT TURBOC GC (VH4EST1)",datum:"2026-02-12",ein:96.54,aus:99.00,menge:11,richtung:"kauf",notiz:"DE000VH4EST1"},
+  {id:1045,symbol:"BNP MINIS SIE",datum:"2026-02-12",ein:6.76,aus:7.32,menge:220,richtung:"kauf",notiz:"DE000BY1NH40"},
+  {id:1046,symbol:"JPM TURBOL RHM",datum:"2026-02-06",ein:4.06,aus:4.35,menge:256,richtung:"kauf",notiz:"DE000JU9X5U4"},
+  {id:1047,symbol:"ING TURBOL XAG (NB4QFJ9)",datum:"2026-02-05",ein:14.50,aus:15.46,menge:137,richtung:"kauf",notiz:"DE000NB4QFJ9"},
+  {id:1048,symbol:"VONT TURBOP SI",datum:"2026-02-03",ein:22.55,aus:25.24,menge:46,richtung:"kauf",notiz:"DE000VJ4JLW7"},
+  {id:1049,symbol:"BNP MINIS XAG",datum:"2026-01-27",ein:16.54,aus:18.32,menge:62,richtung:"kauf",notiz:"DE000BY08Z44"},
+];
+
+
+// ─── State ───
+function berechneErgebnis(t) {
+  if (t.offen || t.aus === null) return null;
+  if (t.ergebnis_fix !== undefined) return t.ergebnis_fix;
+  if (t.aus === 0) return -(t.ein * t.menge);
+  return (t.richtung === 'kauf' ? (t.aus - t.ein) : (t.ein - t.aus)) * t.menge;
+}
+function berechneProzent(t) {
+  if (t.offen || t.aus === null) return null;
+  if (t.aus === 0) return -100;
+  return ((t.aus - t.ein) / t.ein * 100) * (t.richtung === 'leer' ? -1 : 1);
+}
+
+let trades = JSON.parse(localStorage.getItem('handelstagebuch_v8') || 'null');
+if (!trades) {
+  trades = VORTRADES.map(t => ({
+    ...t,
+    ergebnis: berechneErgebnis(t),
+    prozent: berechneProzent(t)
+  }));
+  localStorage.setItem('handelstagebuch_v8', JSON.stringify(trades));
+}
+
+let richtung = 'kauf';
+let tradeStatus = 'offen';
+let schliessenStatus = 'geschlossen';
+let schliessenId = null;
+let bearbeitenId = null;
+let aktiverFilter = 'alle';
+
+// ─── Init ───
+document.getElementById('handelsDatum').value = new Date().toISOString().split('T')[0];
+document.getElementById('ausstiegDatum').value = new Date().toISOString().split('T')[0];
+document.getElementById('schliessenDatum').value = new Date().toISOString().split('T')[0];
+['einstieg','ausstieg','menge'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', aktualisiereVorschau);
+});
+document.getElementById('schliessenKurs').addEventListener('input', aktualisiereSchliessenVorschau);
+document.getElementById('bearbeitenAus').addEventListener('input', aktualisiereBearbeitenVorschau);
+document.getElementById('bearbeitenEin').addEventListener('input', aktualisiereBearbeitenVorschau);
+
+// ─── Hilfsfunktionen ───
+function parseKurs(val) {
+  return parseFloat(String(val || '').replace(',','.').trim());
+}
+function rund(v) {
+  return Math.round(v);
+}
+function fmtEuro(v, ohneKomma) {
+  if (v === null || v === undefined) return '–';
+  const betrag = ohneKomma ? Math.round(Math.abs(v)) : Math.abs(v);
+  const str = ohneKomma
+    ? betrag.toLocaleString('de-DE', {maximumFractionDigits:0})
+    : betrag.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return (v < 0 ? '− ' : '+ ') + '€\u202f' + str;
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function speichern() { localStorage.setItem('handelstagebuch_v8', JSON.stringify(trades)); }
+
+// ─── Navigation ───
+function zeigSeite(seite, el) {
+  document.querySelectorAll('.seite').forEach(s => s.classList.remove('aktiv'));
+  document.querySelectorAll('.bottom-tab').forEach(b => b.classList.remove('aktiv'));
+  document.getElementById('seite-' + seite).classList.add('aktiv');
+  el.classList.add('aktiv');
+  if (seite === 'uebersicht') rendeUebersicht();
+  if (seite === 'verlauf') rendeVerlauf();
+}
+function nachUebersicht() {
+  document.querySelectorAll('.seite').forEach(s => s.classList.remove('aktiv'));
+  document.querySelectorAll('.bottom-tab').forEach(b => b.classList.remove('aktiv'));
+  document.getElementById('seite-uebersicht').classList.add('aktiv');
+  document.getElementById('bTab0').classList.add('aktiv');
+  rendeUebersicht();
+}
+
+// ─── Formular ───
+function setzeStatus(s) {
+  tradeStatus = s;
+  ['sBtnOffen','sBtnGeschlossen','sBtnTotal'].forEach(id => document.getElementById(id).classList.remove('aktiv-status'));
+  const map = {offen:'sBtnOffen',geschlossen:'sBtnGeschlossen',total:'sBtnTotal'};
+  document.getElementById(map[s]).classList.add('aktiv-status');
+  document.getElementById('ausstiegFelder').style.display = s === 'geschlossen' ? '' : 'none';
+  document.getElementById('vorschauBox').style.display = 'none';
+  if (s === 'geschlossen') aktualisiereVorschau();
+}
+function setzeRichtung(r) {
+  richtung = r;
+  document.getElementById('btnKauf').className = 'richtung-btn' + (r==='kauf'?' aktiv-kauf':'');
+  document.getElementById('btnLeer').className = 'richtung-btn' + (r==='leer'?' aktiv-leer':'');
+  aktualisiereVorschau();
+}
+function aktualisiereVorschau() {
+  if (tradeStatus !== 'geschlossen') return;
+  const ein = parseKurs(document.getElementById('einstieg').value);
+  const aus = parseKurs(document.getElementById('ausstieg').value);
+  const menge = parseFloat(document.getElementById('menge').value) || 1;
+  const box = document.getElementById('vorschauBox');
+  if (isNaN(ein) || isNaN(aus)) { box.style.display = 'none'; return; }
+  const erg = (richtung === 'kauf' ? (aus-ein) : (ein-aus)) * menge;
+  box.style.display = 'block';
+  document.getElementById('vorschauBetrag').style.color = erg>=0?'var(--gewinn)':'var(--verlust)';
+  document.getElementById('vorschauBetrag').textContent = fmtEuro(erg);
+  document.getElementById('vorschauProzent').style.color = erg>=0?'var(--gewinn)':'var(--verlust)';
+  document.getElementById('vorschauProzent').textContent = (erg>=0?'+':'') + ((aus-ein)/ein*100*(richtung==='leer'?-1:1)).toFixed(1) + '%';
+}
+function speichereTrade() {
+  const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+  const datum = document.getElementById('handelsDatum').value;
+  const ein = parseKurs(document.getElementById('einstieg').value);
+  const menge = parseFloat(document.getElementById('menge').value) || 1;
+  const notiz = document.getElementById('notiz').value.trim();
+  if (!symbol || !datum || isNaN(ein)) { toast('⚠️ Kürzel, Datum und Einstiegskurs angeben'); return; }
+  let aus = null, ergebnis = null, prozent = null, istOffen = true;
+  if (tradeStatus === 'total') {
+    aus = 0; ergebnis = -(ein * menge); prozent = -100; istOffen = false;
+  } else if (tradeStatus === 'geschlossen') {
+    aus = parseKurs(document.getElementById('ausstieg').value);
+    if (isNaN(aus)) { toast('⚠️ Bitte Ausstiegskurs eingeben'); return; }
+    ergebnis = (richtung==='kauf' ? (aus-ein) : (ein-aus)) * menge;
+    prozent = ((aus-ein)/ein*100) * (richtung==='leer'?-1:1);
+    istOffen = false;
+  }
+  trades.unshift({id:Date.now(), symbol, datum, ein, aus, menge, richtung, ergebnis, prozent, notiz, offen:istOffen});
+  speichern();
+  ['symbol','einstieg','ausstieg','menge','notiz'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('vorschauBox').style.display = 'none';
+  document.getElementById('handelsDatum').value = new Date().toISOString().split('T')[0];
+  setzeStatus('offen');
+  nachUebersicht();
+  toast(istOffen ? '🟡 Offen gespeichert' : ergebnis>=0 ? '✅ Trade gespeichert' : '❌ Trade gespeichert');
+}
+
+// ─── Löschen ───
+function loescheTrade(id) {
+  if (!confirm('Eintrag löschen?')) return;
+  trades = trades.filter(t => t.id !== id);
+  speichern(); rendeUebersicht(); rendeVerlauf();
+  toast('🗑️ Gelöscht');
+}
+
+// ─── Schließen Modal ───
+function schliesseTrade(id) {
+  const t = trades.find(x => x.id === id); if (!t) return;
+  schliessenId = id; schliessenStatus = 'geschlossen';
+  document.getElementById('schliessenTitel').textContent = t.symbol + ' schließen';
+  document.getElementById('schliessenInfo').textContent =
+    t.menge.toLocaleString('de-DE') + '× · Einstieg €\u202f' +
+    t.ein.toLocaleString('de-DE',{minimumFractionDigits:2}) + ' · ' +
+    new Date(t.datum).toLocaleDateString('de-DE');
+  document.getElementById('schliessenKurs').value = '';
+  document.getElementById('schliessenDatum').value = new Date().toISOString().split('T')[0];
+  document.getElementById('schliessenVorschau').style.display = 'none';
+  document.getElementById('schliessenKursFelder').style.display = '';
+  document.getElementById('mBtnGeschlossen').classList.add('aktiv-status');
+  document.getElementById('mBtnTotal').classList.remove('aktiv-status');
+  document.getElementById('schliessenModal').classList.add('offen');
+}
+function setzeSchliessenStatus(s) {
+  schliessenStatus = s;
+  document.getElementById('mBtnGeschlossen').className = 'status-btn' + (s==='geschlossen'?' aktiv-status':'');
+  document.getElementById('mBtnTotal').className = 'status-btn' + (s==='total'?' aktiv-status':'');
+  document.getElementById('schliessenKursFelder').style.display = s==='geschlossen' ? '' : 'none';
+  if (s==='total') {
+    const t = trades.find(x => x.id===schliessenId);
+    const vEl = document.getElementById('schliessenVorschau');
+    vEl.style.display = 'block';
+    vEl.style.background = 'var(--verlust-bg)'; vEl.style.color = 'var(--verlust)';
+    vEl.textContent = '💀 Totalverlust: ' + fmtEuro(t ? -(t.ein*t.menge) : 0);
+  } else {
+    document.getElementById('schliessenVorschau').style.display = 'none';
+  }
+}
+function aktualisiereSchliessenVorschau() {
+  if (schliessenStatus !== 'geschlossen') return;
+  const t = trades.find(x => x.id===schliessenId); if (!t) return;
+  const kurs = parseKurs(document.getElementById('schliessenKurs').value);
+  const vEl = document.getElementById('schliessenVorschau');
+  if (isNaN(kurs) || kurs <= 0) { vEl.style.display = 'none'; return; }
+  const erg = (t.richtung==='kauf' ? (kurs-t.ein) : (t.ein-kurs)) * t.menge;
+  vEl.style.display = 'block';
+  vEl.style.background = erg>=0 ? 'var(--gewinn-bg)' : 'var(--verlust-bg)';
+  vEl.style.color = erg>=0 ? 'var(--gewinn)' : 'var(--verlust)';
+  vEl.textContent = fmtEuro(erg);
+}
+function bestaetigeSchliessen() {
+  const t = trades.find(x => x.id===schliessenId); if (!t) return;
+  if (schliessenStatus === 'total') {
+    t.aus=0; t.offen=false; t.ergebnis=-(t.ein*t.menge); t.prozent=-100;
+    toast('💀 Totalverlust: ' + fmtEuro(t.ergebnis));
+  } else {
+    const kurs = parseKurs(document.getElementById('schliessenKurs').value);
+    if (isNaN(kurs) || kurs <= 0) { toast('⚠️ Gültigen Kurs eingeben z.B. 14,57'); return; }
+    t.aus=kurs; t.offen=false;
+    t.ergebnis = (t.richtung==='kauf' ? (kurs-t.ein) : (t.ein-kurs)) * t.menge;
+    t.prozent = ((kurs-t.ein)/t.ein*100) * (t.richtung==='leer'?-1:1);
+    toast(t.ergebnis>=0 ? '✅ Geschlossen: '+fmtEuro(t.ergebnis) : '❌ Geschlossen: '+fmtEuro(t.ergebnis));
+  }
+  speichern();
+  document.getElementById('schliessenModal').classList.remove('offen');
+  rendeUebersicht(); rendeVerlauf();
+}
+
+// ─── Bearbeiten Modal ───
+function bearbeiteTrade(id) {
+  const t = trades.find(x => x.id===id); if (!t) return;
+  bearbeitenId = id;
+  document.getElementById('bearbeitenTitel').textContent = '✏️ ' + t.symbol;
+  document.getElementById('bearbeitenInfo').textContent =
+    new Date(t.datum).toLocaleDateString('de-DE') + ' · ' +
+    t.menge.toLocaleString('de-DE') + '× · ' + (t.richtung==='kauf'?'Kauf':'Leerverkauf');
+  document.getElementById('bearbeitenSymbol').value = t.symbol;
+  document.getElementById('bearbeitenEin').value = String(t.ein).replace('.',',');
+  document.getElementById('bearbeitenAus').value = t.aus !== null ? String(t.aus).replace('.',',') : '';
+  document.getElementById('bearbeitenNotiz').value = t.notiz || '';
+  aktualisiereBearbeitenVorschau();
+  document.getElementById('bearbeitenModal').classList.add('offen');
+}
+function aktualisiereBearbeitenVorschau() {
+  const t = trades.find(x => x.id===bearbeitenId); if (!t) return;
+  const ein = parseKurs(document.getElementById('bearbeitenEin').value);
+  const aus = parseKurs(document.getElementById('bearbeitenAus').value);
+  const vEl = document.getElementById('bearbeitenVorschau');
+  if (isNaN(ein) || isNaN(aus)) { vEl.style.display='none'; return; }
+  const erg = aus===0 ? -(ein*(t.menge)) : (t.richtung==='kauf'?(aus-ein):(ein-aus))*t.menge;
+  vEl.style.display = 'block';
+  vEl.style.background = erg>=0 ? 'var(--gewinn-bg)' : 'var(--verlust-bg)';
+  vEl.style.color = erg>=0 ? 'var(--gewinn)' : 'var(--verlust)';
+  vEl.textContent = fmtEuro(erg);
+}
+function bestaetigeBearbeiten() {
+  const t = trades.find(x => x.id===bearbeitenId); if (!t) return;
+  const symbol = document.getElementById('bearbeitenSymbol').value.trim().toUpperCase();
+  const ein = parseKurs(document.getElementById('bearbeitenEin').value);
+  const ausVal = document.getElementById('bearbeitenAus').value.trim();
+  const notiz = document.getElementById('bearbeitenNotiz').value.trim();
+  if (!symbol || isNaN(ein)) { toast('⚠️ Symbol und Einstiegskurs angeben'); return; }
+  t.symbol = symbol; t.ein = ein; t.notiz = notiz;
+  if (ausVal === '') {
+    t.aus = null; t.offen = true; t.ergebnis = null; t.prozent = null;
+  } else {
+    const aus = parseKurs(ausVal);
+    if (isNaN(aus)) { toast('⚠️ Ungültiger Ausstiegskurs'); return; }
+    t.aus = aus; t.offen = false;
+    if (aus === 0) {
+      t.ergebnis = -(ein*t.menge); t.prozent = -100;
+    } else {
+      t.ergebnis = (t.richtung==='kauf'?(aus-ein):(ein-aus))*t.menge;
+      t.prozent = ((aus-ein)/ein*100)*(t.richtung==='leer'?-1:1);
+    }
+  }
+  delete t.ergebnis_fix;
+  speichern();
+  document.getElementById('bearbeitenModal').classList.remove('offen');
+  rendeUebersicht(); rendeVerlauf();
+  toast('✅ Aktualisiert: ' + (t.ergebnis!==null ? fmtEuro(t.ergebnis) : 'offen'));
+}
+
+// ─── Filter ───
+function setzeFilter(f, el) {
+  aktiverFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('aktiv'));
+  el.classList.add('aktiv');
+  rendeVerlauf();
+}
+
+// ─── Basiswert erkennen ───
+function erkenneBasiswert(symbol, notiz) {
+  const s = (symbol + ' ' + (notiz||'')).toUpperCase();
+  if (s.includes('XAU')||s.includes('GOLD')||s.includes(' GC')) return 'Gold (XAU)';
+  if (s.includes('XAG')||s.includes('SILBER')||s.includes('SILVER')) return 'Silber (XAG)';
+  if (/TURBOP?\s+SI\b/.test(s)||/MINIL?\s+SI\b/.test(s)) return 'Silber (XAG)';
+  if (s.includes('DAX')) return 'DAX';
+  if (s.includes('RHM')||s.includes('RHEINMETALL')) return 'Rheinmetall';
+  if (s.includes('LCOF')||s.includes('LCOC')||s.includes('OIL')) return 'Öl (Brent/LCOF)';
+  if (/TURBOL?\s+B\b/.test(s)||/TURBOP?\s+B\b/.test(s)||/MINIL?\s+B\b/.test(s)) return 'Öl (Brent/LCOF)';
+  if (s.includes('BTC')||s.includes('BITCOIN')) return 'Bitcoin';
+  if (s.includes('NETFLIX')||s.includes('NFLX')||s.includes('NFC')) return 'Netflix';
+  if (s.includes('ENR')) return 'Energie';
+  if (s.includes('SIE')||s.includes('SIEMEN')) return 'Siemens';
+  return 'Sonstige';
+}
+
+// ─── Kalender-Hilfsfunktionen ───
+function isoWoche(datum) {
+  const d = new Date(datum); d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 4 - (d.getDay()||7));
+  const year = d.getFullYear();
+  const start = new Date(year,0,1);
+  const kw = Math.ceil((((d-start)/86400000)+1)/7);
+  return year + '-KW' + String(kw).padStart(2,'0');
+}
+function wochenLabel(key) {
+  const [year, kw] = key.split('-KW');
+  const kwNum = parseInt(kw);
+  const jan1 = new Date(parseInt(year),0,1);
+  const mon = new Date(jan1.getTime() + (kwNum-1)*7*86400000);
+  mon.setDate(mon.getDate() - (mon.getDay()===0?6:mon.getDay()-1));
+  const fri = new Date(mon.getTime()+4*86400000);
+  const f = d => d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
+  return 'KW ' + kwNum + ' · ' + f(mon) + ' – ' + f(fri);
+}
+function anzahlHandelstage(abg) {
+  return new Set(abg.map(t => t.datum)).size;
+}
+function anzahlWochenHandelstage(abg) {
+  const wochen = new Set(abg.map(t => isoWoche(t.datum)));
+  return wochen.size;
+}
+function anzahlMonateHandelstage(abg) {
+  const monate = new Set(abg.map(t => t.datum.substring(0,7)));
+  return monate.size;
+}
+
+// ─── Perioden HTML ───
+function periodenHTML(eintraege, labelFn) {
+  if (!eintraege.length) return '<div style="color:var(--muted);font-size:13px;font-weight:500">Keine Daten.</div>';
+  const maxAbs = Math.max(...eintraege.map(e => Math.abs(e.pl)), 1);
+  return eintraege.map(e => {
+    const pos = e.pl >= 0;
+    const barW = Math.round(Math.abs(e.pl)/maxAbs*100);
+    const plStr = fmtEuro(e.pl, true);
+    return '<div class="perioden-zeile"><div class="perioden-kopf">' +
+      '<span class="perioden-label">' + labelFn(e) + '</span>' +
+      '<span class="perioden-wert" style="color:' + (pos?'var(--gewinn)':'var(--verlust)') + '">' + plStr + '</span>' +
+      '</div><div class="perioden-bar-wrap">' +
+      '<div class="perioden-bar-bg"><div class="perioden-bar-fill" style="width:' + barW + '%;background:' + (pos?'var(--gewinn)':'var(--verlust)') + '"></div></div>' +
+      '<span class="perioden-meta">' + e.anzahl + ' Trades · ' + e.tq + '% TQ</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+// ─── Rendern ───
+function rendeUebersicht() {
+  const abg = trades.filter(t => !t.offen && t.ergebnis !== null);
+  const offen = trades.filter(t => t.offen);
+  const gesamt = abg.reduce((s,t) => s+t.ergebnis, 0);
+  const gewinne = abg.filter(t => t.ergebnis > 0);
+  const verluste = abg.filter(t => t.ergebnis < 0);
+  const tq = abg.length ? Math.round(gewinne.length/abg.length*100) : 0;
+
+  // Tage, Wochen, Monate
+  const tage = anzahlHandelstage(abg);
+  const wochen = anzahlWochenHandelstage(abg);
+  const monate = anzahlMonateHandelstage(abg);
+  const avgG = gewinne.length ? gewinne.reduce((s,t)=>s+t.ergebnis,0)/gewinne.length : null;
+  const avgV = verluste.length ? verluste.reduce((s,t)=>s+t.ergebnis,0)/verluste.length : null;
+  const avgTag = tage ? gesamt/tage : null;
+  const avgWoche = wochen ? gesamt/wochen : null;
+  const avgMonat = monate ? gesamt/monate : null;
+
+  // KPI 1
+  const gEl = document.getElementById('gesamtErgebnis');
+  gEl.textContent = fmtEuro(gesamt, true);
+  gEl.className = 'kpi-value ' + (gesamt>=0?'gewinn':'verlust');
+  document.getElementById('gesamtSub').textContent = abg.length + ' Trades · ' + gewinne.length + ' Gewinne · ' + verluste.length + ' Verluste';
+  document.getElementById('trefferquote').textContent = tq + '%';
+  document.getElementById('trefferBalken').style.width = tq + '%';
+  document.getElementById('anzahlTrades').textContent = abg.length;
+  document.getElementById('offenSub').textContent = offen.length ? offen.length + ' offen' : 'Keine offenen';
+
+  const atEl = document.getElementById('avgTag');
+  atEl.textContent = avgTag !== null ? fmtEuro(avgTag, true) : '–';
+  atEl.className = 'kpi-value ' + (avgTag>=0?'gewinn':'verlust');
+  document.getElementById('avgTagSub').textContent = tage + ' Handelstage';
+
+  const awEl = document.getElementById('avgWoche');
+  awEl.textContent = avgWoche !== null ? fmtEuro(avgWoche, true) : '–';
+  awEl.className = 'kpi-value ' + (avgWoche>=0?'gewinn':'verlust');
+  const amEl = document.getElementById('avgMonat');
+  amEl.textContent = avgMonat !== null ? fmtEuro(avgMonat, true) : '–';
+  amEl.className = 'kpi-value ' + (avgMonat>=0?'gewinn':'verlust');
+
+  // Wochen
+  const wMap = {};
+  abg.forEach(t => {
+    const k = isoWoche(t.datum);
+    if (!wMap[k]) wMap[k] = {pl:0,anzahl:0,gewinne:0};
+    wMap[k].pl += t.ergebnis; wMap[k].anzahl++;
+    if (t.ergebnis>0) wMap[k].gewinne++;
+  });
+  const wEintraege = Object.entries(wMap).sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([k,v]) => ({key:k, pl:v.pl, anzahl:v.anzahl, tq:Math.round(v.gewinne/v.anzahl*100)}));
+  document.getElementById('wochenStats').innerHTML = periodenHTML(wEintraege, e => wochenLabel(e.key));
+
+  // Monate
+  const monate2 = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  const mMap = {};
+  abg.forEach(t => {
+    const k = t.datum.substring(0,7);
+    if (!mMap[k]) mMap[k] = {pl:0,anzahl:0,gewinne:0};
+    mMap[k].pl += t.ergebnis; mMap[k].anzahl++;
+    if (t.ergebnis>0) mMap[k].gewinne++;
+  });
+  const mEintraege = Object.entries(mMap).sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([k,v]) => {
+      const [yr,mo] = k.split('-');
+      return {key:k, label:monate2[parseInt(mo)-1]+' '+yr, pl:v.pl, anzahl:v.anzahl, tq:Math.round(v.gewinne/v.anzahl*100)};
+    });
+  document.getElementById('monatsStats').innerHTML = periodenHTML(mEintraege, e => e.label);
+
+  // Basiswert
+  const bwMap = {};
+  abg.forEach(t => {
+    const bw = erkenneBasiswert(t.symbol, t.notiz);
+    if (!bwMap[bw]) bwMap[bw] = {pl:0,anzahl:0,gewinne:0};
+    bwMap[bw].pl += t.ergebnis; bwMap[bw].anzahl++;
+    if (t.ergebnis>0) bwMap[bw].gewinne++;
+  });
+  const bwSorted = Object.entries(bwMap).sort((a,b)=>b[1].pl-a[1].pl);
+  const bwMax = Math.max(...bwSorted.map(([,v])=>Math.abs(v.pl)),1);
+  document.getElementById('basiswertStats').innerHTML = bwSorted.map(([name,v]) => {
+    const pos = v.pl>=0;
+    const barW = Math.round(Math.abs(v.pl)/bwMax*100);
+    return '<div class="bw-zeile perioden-zeile"><div class="perioden-kopf">' +
+      '<span class="perioden-label">' + name + '</span>' +
+      '<span class="perioden-wert" style="color:' + (pos?'var(--gewinn)':'var(--verlust)') + '">' + fmtEuro(v.pl,true) + '</span>' +
+      '</div><div class="perioden-bar-wrap">' +
+      '<div class="perioden-bar-bg"><div class="perioden-bar-fill" style="width:' + barW + '%;background:' + (pos?'var(--gewinn)':'var(--verlust)') + '"></div></div>' +
+      '<span class="perioden-meta">' + v.anzahl + ' Trades · ' + Math.round(v.gewinne/v.anzahl*100) + '% TQ</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+function rendeVerlauf() {
+  const offene = trades.filter(t => t.offen);
+  const offeneKarte = document.getElementById('offeneKarte');
+  const offeneListe = document.getElementById('offeneListe');
+  if (!offene.length) { offeneKarte.style.display = 'none'; } 
+  else {
+    offeneKarte.style.display = '';
+    offeneListe.innerHTML = offene.map(t => {
+      const kosten = t.ein * t.menge;
+      const datStr = new Date(t.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      return '<div class="offen-row">' +
+        '<div class="richtungs-badge ' + t.richtung + '">' + (t.richtung==='kauf'?'▲':'▼') + '</div>' +
+        '<div style="flex:1;min-width:0"><div class="offen-sym">' + t.symbol + '</div>' +
+        '<div class="offen-sub">' + datStr + ' · ' + t.menge.toLocaleString('de-DE') + '× · ' +
+        '€\u202f' + t.ein.toLocaleString('de-DE',{minimumFractionDigits:2}) + '</div></div>' +
+        '<div class="offen-kosten">− €\u202f' + Math.round(kosten).toLocaleString('de-DE') + '</div>' +
+        '<button class="btn small orange" onclick="schliesseTrade(' + t.id + ')">Schließen</button>' +
+        '<button class="loeschen-btn" onclick="loescheTrade(' + t.id + ')">×</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  let abg = trades.filter(t => !t.offen && t.ergebnis !== null);
+  if (aktiverFilter==='gewinn') abg = abg.filter(t=>t.ergebnis>0);
+  else if (aktiverFilter==='verlust') abg = abg.filter(t=>t.ergebnis<0);
+  else if (aktiverFilter==='kauf') abg = abg.filter(t=>t.richtung==='kauf');
+  else if (aktiverFilter==='leer') abg = abg.filter(t=>t.richtung==='leer');
+
+  document.getElementById('verlaufAnzahl').textContent = abg.length + ' Einträge';
+  const tbody = document.getElementById('verlaufBody');
+  if (!abg.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--muted);font-weight:600">Keine Einträge</td></tr>';
+    return;
+  }
+  tbody.innerHTML = abg.map(t => {
+    const ergCls = t.ergebnis>=0?'t-gewinn':'t-verlust';
+    const pct = t.prozent !== null ? (t.prozent>=0?'+':'')+Math.round(t.prozent)+'%' : '–';
+    const erg = (t.ergebnis>=0?'+\u202f':'−\u202f') + '€\u202f' + Math.round(Math.abs(t.ergebnis)).toLocaleString('de-DE');
+    const datStr = new Date(t.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const ausStr = t.aus===0 ? '💀 0' : (t.aus!==null ? '€\u202f'+t.aus.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}) : '–');
+    return '<tr>' +
+      '<td>' + datStr + '</td>' +
+      '<td><span class="td-sym">' + t.symbol + '</span><span class="td-notiz">' + (t.notiz||'') + '</span></td>' +
+      '<td><span class="dir-chip ' + t.richtung + '">' + (t.richtung==='kauf'?'▲':'▼') + '</span></td>' +
+      '<td style="text-align:right">' + t.menge.toLocaleString('de-DE') + '</td>' +
+      '<td style="text-align:right">€\u202f' + t.ein.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</td>' +
+      '<td style="text-align:right">' + ausStr + '</td>' +
+      '<td style="text-align:right" class="' + ergCls + '">' + erg + '</td>' +
+      '<td style="text-align:right" class="' + ergCls + '">' + pct + '</td>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn small ghost" onclick="bearbeiteTrade(' + t.id + ')" style="padding:5px 8px;min-height:0;margin-right:3px">✏️</button>' +
+        '<button class="loeschen-btn" onclick="loescheTrade(' + t.id + ')">×</button>' +
+      '</td></tr>';
+  }).join('');
+}
+
+// ─── iPad / Download ───
+function zeigeIpadAnleitung() { document.getElementById('ipadModal').classList.add('offen'); }
+function ladeHerunter() {
+  const html = document.documentElement.outerHTML;
+  const blob = new Blob([html],{type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='index.html'; a.click();
+  URL.revokeObjectURL(url);
+  toast('⬇ Download gestartet');
+}
+
+// ─── CSV ───
+function exportCSV() {
+  const header = 'Datum;Symbol;Richtung;Stück;Einstieg;Ausstieg;Ergebnis EUR;Prozent;Notiz';
+  const rows = trades.map(t => [
+    t.datum, t.symbol, t.richtung, t.menge,
+    t.ein.toFixed(2),
+    t.aus!==null?t.aus.toFixed(2):'offen',
+    t.ergebnis!==null?Math.round(t.ergebnis):'offen',
+    t.prozent!==null?Math.round(t.prozent):'offen',
+    t.notiz||''
+  ].join(';'));
+  const blob = new Blob([header+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='handelstagebuch.csv'; a.click();
+  toast('⬇ CSV exportiert');
+}
+
+rendeUebersicht();
+</script>
+</body>
+</html>
