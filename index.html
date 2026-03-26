@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Handelstagebuch</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+    :root {
+      --orange:#FFA600;--orange-dark:#996400;--orange-light:#FFE9CC;--orange-pale:#FFFDF5;
+      --txt:#111;--muted:#6b7280;--card:#fff;--bg:#f7f7fb;--border:#e5e7eb;
+      --shadow:0 4px 16px rgba(0,0,0,.07);--r:18px;
+      --g:#16a34a;--gb:#f0fdf4;--v:#dc2626;--vb:#fff5f5;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--txt);font-family:'Montserrat',sans-serif;overflow-x:hidden}
+    /* Topbar */
+    .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,#FFA600,#ffbe3b);padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+    .topbar-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:12px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand-icon{font-size:26px}
+    .brand-name{font-weight:800;font-size:16px;line-height:1.1;color:#111}
+    .brand-sub{font-size:11px;opacity:.75;color:#111}
+    .spacer{flex:1}
+    @media(max-width:500px){.brand-text{display:none}}
+    .save-btn{display:flex;align-items:center;gap:5px;background:#fff;color:#111;border:none;border-radius:12px;padding:8px 14px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;min-height:40px}
+    /* Bottom Nav */
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--border);display:flex;box-shadow:0 -4px 20px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom)}
+    .btab{flex:1;padding:10px 4px 8px;border:none;background:transparent;color:var(--muted);font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s}
+    .btab.on{color:var(--orange-dark)}
+    .btab.on .bico{background:var(--orange-pale);border-radius:10px}
+    .bico{font-size:22px;padding:4px 14px;border-radius:10px}
+    /* Container */
+    .wrap{max-width:900px;margin:16px auto;padding:0 16px 90px}
+    .seite{display:none}.seite.on{display:block}
+    /* Cards */
+    .card{background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:14px}
+    .card-h{padding:13px 18px;border-bottom:1px solid var(--border);font-size:15px;font-weight:700}
+    .card-b{padding:14px 18px}
+    /* KPI Raster */
+    .kpi3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+    @media(max-width:560px){.kpi3{grid-template-columns:1fr 1fr}}
+    .kbox{background:#fff;border:1px solid var(--border);border-radius:16px;padding:13px 14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .kbox.ot{border-top:3px solid var(--orange)}
+    .kbox.gt{border-top:3px solid var(--g)}
+    .kbox.vt{border-top:3px solid var(--v)}
+    .kbox.bt{border-top:3px solid #75E1C3}
+    .kl{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.7px;text-transform:uppercase;margin-bottom:5px}
+    .kv{font-weight:800;font-size:19px;font-variant-numeric:tabular-nums;line-height:1}
+    .kv.g{color:var(--g)}.kv.v{color:var(--v)}.kv.o{color:var(--orange-dark)}
+    .ks{font-size:11px;color:var(--muted);font-weight:600;margin-top:4px}
+    .tbar{background:var(--bg);border-radius:6px;height:6px;margin-top:7px;overflow:hidden;border:1px solid var(--border)}
+    .tfill{height:100%;background:linear-gradient(90deg,#75E1C3,var(--orange));border-radius:6px;transition:width .6s}
+    /* Perioden */
+    .prow{margin-bottom:12px}
+    .phead{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+    .plabel{font-size:13px;font-weight:700}
+    .pval{font-size:13px;font-weight:800}
+    .pbar-wrap{display:flex;align-items:center;gap:8px}
+    .pbar-bg{flex:1;background:var(--bg);border-radius:6px;height:7px;overflow:hidden;border:1px solid var(--border)}
+    .pbar-fill{height:100%;border-radius:6px;opacity:.75}
+    .pmeta{font-size:11px;color:var(--muted);white-space:nowrap;font-weight:600}
+    /* Formular */
+    .fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+    @media(max-width:480px){.fg2{grid-template-columns:1fr}}
+    label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+    input{width:100%;padding:11px 12px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);font-size:16px;font-family:'Montserrat',sans-serif;min-height:44px;color:var(--txt)}
+    input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,166,0,.15)}
+    /* Symbol-Buttons */
+    .sym-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+    @media(max-width:480px){.sym-btns{grid-template-columns:repeat(3,1fr)}}
+    .sym-btn{padding:10px 6px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Montserrat',sans-serif;min-height:44px}
+    .sym-btn.on{border-color:var(--orange);color:var(--orange-dark);background:var(--orange-pale)}
+    /* Status-Buttons */
+    .status-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+    .sbtn{padding:10px 6px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;min-height:44px;transition:.15s}
+    .sbtn.on{border-color:var(--orange);color:var(--orange-dark);background:var(--orange-pale)}
+    /* Vorschau */
+    .vorschau{display:none;background:var(--orange-pale);border:1.5px solid var(--orange-light);border-radius:12px;padding:12px;margin-bottom:10px;text-align:center}
+    /* Buttons */
+    .btn{border:none;border-radius:14px;padding:12px 18px;cursor:pointer;font-weight:700;font-size:15px;font-family:'Montserrat',sans-serif;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.15s}
+    .btn:active{opacity:.85;transform:scale(.98)}
+    .btn.orange{background:var(--orange);color:#111}
+    .btn.ghost{background:#fff;color:#111;border:1px solid var(--border)}
+    .btn.full{width:100%}
+    .btn.sm{padding:5px 9px;font-size:12px;min-height:0;border-radius:9px}
+    /* Verlauf Tabelle */
+    .tbl{width:100%;border-collapse:collapse;font-size:13px}
+    .tbl th{text-align:left;padding:8px 10px;background:var(--bg);border-bottom:2px solid var(--border);font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+    .tbl td{padding:8px 10px;border-bottom:1px solid #eef0f8;vertical-align:middle;white-space:nowrap}
+    .tbl tr:last-child td{border-bottom:none}
+    .tbl tr:hover td{background:var(--bg)}
+    .tg{color:var(--g);font-weight:800}.tv{color:var(--v);font-weight:800}
+    .tsym{font-weight:800;max-width:130px;overflow:hidden;text-overflow:ellipsis;display:block}
+    .tnotiz{color:var(--muted);font-size:10px;display:block;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+    .chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+    .chip.kauf{background:var(--gb);color:var(--g)}.chip.leer{background:var(--vb);color:var(--v)}
+    /* Offene Positionen */
+    .orow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .orow:last-child{border-bottom:none}
+    .osym{font-weight:800;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .osub{color:var(--muted);font-size:11px;font-weight:500}
+    .obetrag{color:var(--v);font-size:13px;font-weight:800;white-space:nowrap;margin-right:6px}
+    /* Badge */
+    .rbadge{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+    .rbadge.kauf{background:var(--gb);color:var(--g)}.rbadge.leer{background:var(--vb);color:var(--v)}.rbadge.offen{background:var(--orange-light);color:var(--orange-dark)}
+    /* Letzte Einträge */
+    .erow{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;box-shadow:0 2px 5px rgba(0,0,0,.03);margin-bottom:8px}
+    .erow.ge{border-left:4px solid var(--g)}.erow.ve{border-left:4px solid var(--v)}.erow.oe{border-left:4px solid var(--orange);background:var(--orange-pale)}
+    .esym{font-size:13px;font-weight:800}
+    .emeta{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+    .eres{text-align:right}.ebetrag{font-size:13px;font-weight:800}
+    .ebetrag.g{color:var(--g)}.ebetrag.v{color:var(--v)}.ebetrag.o{color:var(--orange-dark)}
+    /* Filter */
+    .fbar{display:flex;gap:7px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+    .fbtn{flex-shrink:0;padding:7px 12px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Montserrat',sans-serif;min-height:36px}
+    .fbtn.on{background:var(--orange-light);border-color:var(--orange);color:var(--orange-dark)}
+    .del-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:17px;padding:3px;line-height:1;border-radius:6px;min-width:26px;min-height:26px;display:flex;align-items:center;justify-content:center}
+    .del-btn:hover{color:var(--v);background:var(--vb)}
+    /* Modals */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:100;padding:16px}
+    .overlay.on{display:flex}
+    .mpanel{background:#fff;border-radius:22px;padding:22px 18px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+    @media(max-width:560px){.overlay{padding:0;align-items:flex-end}.mpanel{border-radius:22px 22px 0 0}}
+    .mpanel h3{font-size:16px;font-weight:800;margin-bottom:5px}
+    .mpanel .minfo{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+    .mclose{width:100%;padding:12px;margin-top:6px;background:#111;color:#fff;border:none;border-radius:14px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+    .mprev{display:none;border-radius:12px;padding:11px;margin-bottom:10px;font-size:15px;font-weight:800;text-align:center}
+    /* Toast */
+    .toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 18px;border-radius:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.2s;z-index:200;font-weight:600;font-size:13px;white-space:nowrap}
+    .toast.on{opacity:1}
+
+    /* ── MOBILE OPTIMIERUNGEN ── */
+    @media(max-width:480px){
+      .wrap{padding:0 10px 88px}
+      .kpi3{grid-template-columns:1fr 1fr;gap:8px}
+      .kbox{padding:11px 10px}
+      .kv{font-size:16px}
+      .kl{font-size:9px}
+      /* Tabelle auf Mobile: kompakter */
+      .tbl th,.tbl td{padding:7px 6px;font-size:11px}
+      .tsym{max-width:90px}
+      .tnotiz{max-width:90px}
+      /* Offene Positionen */
+      .orow{gap:7px}
+      .osym{font-size:12px}
+      /* Karten */
+      .card-h{font-size:14px;padding:12px 14px}
+      .card-b{padding:12px 14px}
+      /* Perioden */
+      .plabel{font-size:12px}
+      .pval{font-size:12px}
+      .pmeta{font-size:10px}
+      /* Formular */
+      .sym-btns{grid-template-columns:repeat(3,1fr)}
+      .status-btns{grid-template-columns:1fr 1fr;gap:6px}
+      .status-btns .sbtn:last-child{grid-column:span 2}
+      input{font-size:16px!important} /* iOS zoom verhindern */
+      /* Tabellen-Spalten auf Mobile ausblenden */
+      .tbl .hide-m{display:none}
+      /* Modal */
+      .mpanel{padding:18px 14px}
+      /* Bottom Nav */
+      .btab{font-size:9px}
+      .bico{font-size:20px;padding:3px 12px}
+    }
+    @media(max-width:360px){
+      .kpi3{grid-template-columns:1fr 1fr}
+      .kv{font-size:15px}
+    }
+    /* Tabellen-Scrollbereich auf kleinen Screens besser */
+    .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px}
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-icon">📈</div>
+      <div class="brand-text">
+        <div class="brand-name">Handelstagebuch</div>
+        <div class="brand-sub">Knock-Out &amp; Turbo Journal</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="save-btn" onclick="zeigeIpadModal()">💾 Speichern</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ══ ÜBERSICHT ══ -->
+<div class="seite on" id="seite-uebersicht">
+
+  <!-- Zeile 1: Gesamt, TQ, Trades -->
+  <div class="kpi3">
+    <div class="kbox gt">
+      <div class="kl">Gesamt P&L</div>
+      <div class="kv" id="kGesamtVal">–</div>
+      <div class="ks" id="kGesamtSub">–</div>
+    </div>
+    <div class="kbox ot">
+      <div class="kl">Trefferquote</div>
+      <div class="kv o" id="kTQ">–</div>
+      <div class="tbar"><div class="tfill" id="kTQBar" style="width:0%"></div></div>
+    </div>
+    <div class="kbox bt">
+      <div class="kl">Trades</div>
+      <div class="kv o" id="kAnzahl">–</div>
+      <div class="ks" id="kOffenSub">–</div>
+    </div>
+  </div>
+
+  <!-- Zeile 2: Heute, Woche, Monat -->
+  <div class="kpi3">
+    <div class="kbox ot">
+      <div class="kl">Heute</div>
+      <div class="kv" id="kHeute">–</div>
+      <div class="ks" id="kHeuteSub">–</div>
+    </div>
+    <div class="kbox ot">
+      <div class="kl">Diese Woche</div>
+      <div class="kv" id="kWoche">–</div>
+      <div class="ks" id="kWocheSub">–</div>
+    </div>
+    <div class="kbox ot">
+      <div class="kl">Dieser Monat</div>
+      <div class="kv" id="kMonat">–</div>
+      <div class="ks" id="kMonatSub">–</div>
+    </div>
+  </div>
+
+  <!-- Zeile 3: Ø Tag, Woche, Monat -->
+  <div class="kpi3">
+    <div class="kbox ot">
+      <div class="kl">Ø pro Tag</div>
+      <div class="kv" id="kAvgTag">–</div>
+      <div class="ks" id="kAvgTagSub">–</div>
+    </div>
+    <div class="kbox ot">
+      <div class="kl">Ø pro Woche</div>
+      <div class="kv" id="kAvgWoche">–</div>
+    </div>
+    <div class="kbox ot">
+      <div class="kl">Ø pro Monat</div>
+      <div class="kv" id="kAvgMonat">–</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">📅 Wochenübersicht</div>
+    <div class="card-b" id="wochenStats"></div>
+  </div>
+  <div class="card">
+    <div class="card-h">🗓 Monatsübersicht</div>
+    <div class="card-b" id="monatsStats"></div>
+  </div>
+  <div class="card">
+    <div class="card-h">🎯 Basiswert-Statistik</div>
+    <div class="card-b" id="bwStats"></div>
+  </div>
+</div>
+
+<!-- ══ EINTRAGEN ══ -->
+<div class="seite" id="seite-eintragen">
+  <div class="card">
+    <div class="card-h">➕ Neuen Trade eintragen</div>
+    <div class="card-b">
+
+      <label>Basiswert</label>
+      <div class="sym-btns" style="margin-bottom:10px">
+        <button class="sym-btn" id="symDAX"   onclick="setSymbol('DAX')">📊 DAX</button>
+        <button class="sym-btn" id="symOel"   onclick="setSymbol('Öl')">🛢 Öl</button>
+        <button class="sym-btn" id="symGold"  onclick="setSymbol('Gold')">🥇 Gold</button>
+        <button class="sym-btn" id="symSilb"  onclick="setSymbol('Silber')">🥈 Silber</button>
+        <button class="sym-btn" id="symFrei"  onclick="setSymbol('frei')">✏️ Frei</button>
+      </div>
+      <div id="freifeld" style="display:none;margin-bottom:10px">
+        <label>Symbol / Bezeichnung</label>
+        <input type="text" id="freitext" placeholder="z.B. Rheinmetall, Bitcoin..." autocomplete="off" autocapitalize="words">
+      </div>
+
+      <div class="fg2">
+        <div><label>Kaufdatum</label><input type="date" id="fDatum"></div>
+        <div><!-- Platzhalter --></div>
+      </div>
+
+      <label>Status</label>
+      <div class="status-btns" style="margin-bottom:10px">
+        <button class="sbtn on" id="sBtnOffen"       onclick="setStat('offen')">🟡 Offen</button>
+        <button class="sbtn"    id="sBtnGeschlossen" onclick="setStat('geschlossen')">✅ Geschlossen</button>
+        <button class="sbtn"    id="sBtnTotal"       onclick="setStat('total')">💀 Totalverlust</button>
+      </div>
+
+      <div class="fg2">
+        <div><label>Gesamtkaufpreis (€)</label><input type="text" inputmode="decimal" id="fEin" placeholder="z.B. 3.000"></div>
+        <div id="fAusWrap" style="display:none"><label>Gesamtverkaufspreis (€)</label><input type="text" inputmode="decimal" id="fAus" placeholder="z.B. 3.500"></div>
+      </div>
+
+      <div class="fg2" style="margin-bottom:10px">
+        <div><label>Notiz / ISIN (optional)</label><input type="text" id="fNotiz" placeholder="DE000..." autocomplete="off"></div>
+      </div>
+
+      <div class="vorschau" id="fVorschau">
+        <div style="font-size:11px;color:var(--orange-dark);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px">Ergebnis</div>
+        <div style="display:flex;justify-content:center;gap:16px;align-items:center">
+          <span id="fVBetrag" style="font-size:20px;font-weight:800"></span>
+          <span id="fVPct"    style="font-size:14px;font-weight:700"></span>
+        </div>
+      </div>
+
+      <button class="btn orange full" onclick="speichereTrade()">Trade speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VERLAUF ══ -->
+<div class="seite" id="seite-verlauf">
+  <div class="card" id="offeneKarte">
+    <div class="card-h">🟡 Offene Positionen</div>
+    <div class="card-b" id="offeneListe"></div>
+  </div>
+  <div class="card">
+    <div class="card-h">📋 Abgeschlossene Trades</div>
+    <div class="card-b">
+      <div class="fbar">
+        <button class="fbtn on" onclick="setFilter('alle',this)">Alle</button>
+        <button class="fbtn" onclick="setFilter('gewinn',this)">✅ Gewinne</button>
+        <button class="fbtn" onclick="setFilter('verlust',this)">❌ Verluste</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:12px;font-weight:700;color:var(--muted)" id="vAnzahl">–</span>
+        <button class="btn ghost sm" onclick="exportCSV()">⬇ CSV</button>
+      </div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table class="tbl">
+          <thead><tr>
+            <th>Datum</th><th>Symbol</th><th class="hide-m">Art</th>
+            <th style="text-align:right">Kauf €</th>
+            <th style="text-align:right">Verk €</th>
+            <th style="text-align:right">P/L</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="vBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <button class="btab on" id="bt0" onclick="goTab('uebersicht',this)">
+    <span class="bico">📊</span><span>Übersicht</span>
+  </button>
+  <button class="btab" id="bt1" onclick="goTab('eintragen',this)">
+    <span class="bico">➕</span><span>Eintragen</span>
+  </button>
+  <button class="btab" id="bt2" onclick="goTab('verlauf',this)">
+    <span class="bico">📋</span><span>Verlauf</span>
+  </button>
+</div>
+
+<!-- Modal: Schließen -->
+<div class="overlay" id="schlModal" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="mpanel">
+    <h3 id="schlTitel">Position schließen</h3>
+    <p class="minfo" id="schlInfo"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="sbtn on" id="mBtnG" onclick="setSchlStat('geschlossen')">✅ Geschlossen</button>
+      <button class="sbtn"    id="mBtnT" onclick="setSchlStat('total')">💀 Totalverlust</button>
+    </div>
+    <div id="schlKursWrap">
+      <label>Gesamtverkaufspreis (€)</label>
+      <input type="text" inputmode="decimal" id="schlKurs" placeholder="z.B. 4.200" style="margin-bottom:10px;font-size:18px;font-weight:700">
+    </div>
+    <div class="mprev" id="schlPrev"></div>
+    <button class="btn orange full" onclick="bestSchl()" style="margin-bottom:8px">Schließen</button>
+    <button class="mclose" onclick="document.getElementById('schlModal').classList.remove('on')">Abbrechen</button>
+  </div>
+</div>
+
+<!-- Modal: Bearbeiten -->
+<div class="overlay" id="editModal" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="mpanel">
+    <h3 id="editTitel">Trade bearbeiten</h3>
+    <p class="minfo" id="editInfo"></p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+      <div><label>Symbol</label><input type="text" id="eSymbol" autocapitalize="words"></div>
+      <div class="fg2">
+        <div><label>Gesamtkaufpreis (€)</label><input type="text" inputmode="decimal" id="eEin" style="font-size:16px;font-weight:700"></div>
+        <div><label>Gesamtverkaufspreis (€)</label><input type="text" inputmode="decimal" id="eAus" placeholder="leer = offen" style="font-size:16px;font-weight:700"></div>
+      </div>
+      <div><label>Notiz / ISIN</label><input type="text" id="eNotiz"></div>
+    </div>
+    <div class="mprev" id="editPrev"></div>
+    <button class="btn orange full" onclick="bestEdit()" style="margin-bottom:8px">Speichern</button>
+    <button class="mclose" onclick="document.getElementById('editModal').classList.remove('on')">Abbrechen</button>
+  </div>
+</div>
+
+<!-- Modal: Speichern/iPad -->
+<div class="overlay" id="ipadModal" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="mpanel">
+    <h3>📱 App speichern</h3>
+    <p class="minfo">So richtest du die App dauerhaft auf dem iPad ein:</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--orange);color:#111;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+        <div style="font-size:13px;font-weight:600;padding-top:4px">In Safari unten auf das <strong>Teilen-Symbol</strong> tippen</div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--orange);color:#111;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+        <div style="font-size:13px;font-weight:600;padding-top:4px"><strong>„Zum Home-Bildschirm"</strong> auswählen</div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--orange);color:#111;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+        <div style="font-size:13px;font-weight:600;padding-top:4px">Bestätigen → App-Icon erscheint ✅</div>
+      </div>
+    </div>
+    <button class="btn orange full" onclick="download()" style="margin-bottom:8px">⬇ index.html herunterladen</button>
+    <button class="mclose" onclick="document.getElementById('ipadModal').classList.remove('on')">Schließen</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const VORTRADES = [
+  // OFFENE TRADES (Stand 17.03.2026)
+  {id:1001,symbol:"VONT TURBOC LCOF",datum:"2026-03-13",ein:8.95,aus:10.29,menge:123,richtung:"kauf",notiz:"DE000VJ8KY51 – geschlossen 16.03",offen:false,ergebnis_fix:164.82},
+  {id:1002,symbol:"VONT TURBOP B",datum:"2026-03-06",ein:12.02,aus:0.00,menge:247,richtung:"kauf",notiz:"DE000VX71725 – Totalverlust (Knock-Out)",ergebnis_fix:-2968.94},
+  {id:1003,symbol:"ING BANK TURBOL XAG",datum:"2026-03-02",ein:10.37,aus:null,menge:191,richtung:"kauf",notiz:"DE000NB5NFH7 – offen",offen:true},
+  {id:1050,symbol:"MS CO.I. TURBOS RHM",datum:"2026-03-13",ein:22.19,aus:19.35,menge:47,richtung:"kauf",notiz:"DE000MN2C093 – geschlossen 16.03",offen:false,ergebnis_fix:-133.48},
+  // NEUE TRADES 16.03.2026
+  {id:2001,symbol:"BNP TURBOL XAU",datum:"2026-03-16",ein:33.96,aus:34.46,menge:88,richtung:"kauf",notiz:"DE000BY2D1L2"},
+  {id:2002,symbol:"JPM MINIS DAX",datum:"2026-03-16",ein:31.60,aus:30.81,menge:63,richtung:"kauf",notiz:"DE000JF8FVL8"},
+  {id:2003,symbol:"VONT TURBOP26 XAG",datum:"2026-03-16",ein:5.80,aus:5.99,menge:256,richtung:"kauf",notiz:"DE000VJ78TA8"},
+  {id:2004,symbol:"BNP TURBOL LCOF (PK8XJ71-A)",datum:"2026-03-16",ein:11.09,aus:11.42,menge:444,richtung:"kauf",notiz:"DE000PK8XJ71"},
+  {id:2005,symbol:"BNP TURBOL LCOF (PK8XJ71-B)",datum:"2026-03-16",ein:12.61,aus:12.41,menge:396,richtung:"kauf",notiz:"DE000PK8XJ71"},
+  {id:2006,symbol:"BNP TURBOS LCOF",datum:"2026-03-16",ein:13.35,aus:14.14,menge:381,richtung:"kauf",notiz:"DE000PK8UZR0"},
+  {id:2007,symbol:"JPM MINIL XAG",datum:"2026-03-16",ein:9.09,aus:9.81,menge:322,richtung:"kauf",notiz:"DE000JZ5PS17"},
+  {id:2008,symbol:"BNP TURBOL XAU (PK5BDC5)",datum:"2026-03-16",ein:62.21,aus:60.00,menge:32,richtung:"kauf",notiz:"DE000PK5BDC5"},
+  // NEUE TRADES 17.03.2026
+  {id:2009,symbol:"VONT TURBOP LCOF",datum:"2026-03-17",ein:13.53,aus:15.10,menge:370,richtung:"kauf",notiz:"DE000VJ76GP7"},
+  {id:2010,symbol:"L+S TURBOC BTC",datum:"2026-03-17",ein:0.93,aus:0.91,menge:2083,richtung:"kauf",notiz:"DE000LX8CLY3"},
+  {id:2011,symbol:"JPM TURBOL DAX",datum:"2026-03-17",ein:34.16,aus:34.16,menge:146,richtung:"kauf",notiz:"DE000JH1UAD1"},
+  // OFFENE POSITIONEN 17.03.2026
+  {id:2012,symbol:"ING TURBOS LCOF",datum:"2026-03-17",ein:11.01,aus:null,menge:460,richtung:"kauf",notiz:"DE000NB5V8A8 – offen",offen:true},
+  {id:2013,symbol:"BNP TURBOL XAU",datum:"2026-03-17",ein:54.42,aus:null,menge:110,richtung:"kauf",notiz:"DE000BY1M3V7 – offen",offen:true},
+  {id:2014,symbol:"UNICREDIT TUBULL RHM",datum:"2026-03-17",ein:19.28,aus:null,menge:157,richtung:"kauf",notiz:"DE000UG5VCB6 – offen",offen:true},
+  // ABGESCHLOSSENE TRADES (chronologisch rückwärts)
+  {id:1004,symbol:"JPM MINIS DAX",datum:"2026-03-13",ein:34.00,aus:35.10,menge:88,richtung:"kauf",notiz:"DE000J0J0B0"},
+  {id:1005,symbol:"BNP TURBOS XAU",datum:"2026-03-13",ein:62.73,aus:67.04,menge:47,richtung:"kauf",notiz:"DE000PK52LA0"},
+  {id:1006,symbol:"BNP X-TUL26 DAX",datum:"2026-03-13",ein:7.66,aus:8.01,menge:156,richtung:"kauf",notiz:"DE000PK5GL63"},
+  {id:1007,symbol:"BNP TURBOL LCOF",datum:"2026-03-13",ein:11.82,aus:14.57,menge:343,richtung:"kauf",notiz:"DE000PK8V5C3 – 93St@11,63 + 250St@11,88",ergebnis_fix:945.92},
+  {id:1008,symbol:"JPM TURBOS DAX",datum:"2026-03-12",ein:40.08,aus:41.33,menge:124,richtung:"kauf",notiz:"DE000JF7TZL2 – 37@40,34 + 37@39,62 + 50@40,44",ergebnis_fix:144.40},
+  {id:1009,symbol:"VONT TURBOC XAU",datum:"2026-03-11",ein:70.18,aus:66.19,menge:179,richtung:"kauf",notiz:"DE000VJ0ZR77 – mehrere Käufe",ergebnis_fix:-706.43},
+  {id:1010,symbol:"VONT TURBOC LCOF (HKN3)",datum:"2026-03-12",ein:10.32,aus:10.43,menge:390,richtung:"kauf",notiz:"DE000VJ8HKN3 – 103@10,07 + 287@10,44",ergebnis_fix:34.21},
+  {id:1011,symbol:"VONT TURBOC LCOF (HKX2)",datum:"2026-03-12",ein:14.39,aus:15.94,menge:207,richtung:"kauf",notiz:"DE000VJ8HKX2"},
+  {id:1012,symbol:"ING TURBOL XAG (L9E0)",datum:"2026-03-12",ein:10.74,aus:11.36,menge:186,richtung:"kauf",notiz:"DE000NB5L9E0"},
+  {id:1013,symbol:"ING TURBOL LCOF (RAN7)",datum:"2026-03-12",ein:18.96,aus:20.08,menge:105,richtung:"kauf",notiz:"DE000NB5RAN7"},
+  {id:1014,symbol:"BNP TURBOL LCOF (ME20)",datum:"2026-03-12",ein:13.90,aus:14.83,menge:217,richtung:"kauf",notiz:"DE000PK8ME20"},
+  {id:1015,symbol:"VONT MINIL BTC",datum:"2026-03-12",ein:12.23,aus:12.83,menge:245,richtung:"kauf",notiz:"DE000VJ8ERF1"},
+  {id:1016,symbol:"ING TURBOL LCOF (RA26)",datum:"2026-03-11",ein:13.6451,aus:18.26,menge:475,richtung:"kauf",notiz:"DE000NB5RA26 – 88@17,01 + 387@12,88"},
+  {id:1017,symbol:"UNICREDIT TUBULL RHM",datum:"2026-03-11",ein:14.61,aus:18.06,menge:100,richtung:"kauf",notiz:"DE000UG555P0"},
+  {id:1018,symbol:"VONT TURBOC RHM (VH98)",datum:"2026-03-11",ein:6.24,aus:9.76,menge:142,richtung:"kauf",notiz:"DE000VH98L89"},
+  {id:1019,symbol:"UNICREDIT MINIBU RHM",datum:"2026-03-11",ein:22.87,aus:26.49,menge:86,richtung:"kauf",notiz:"DE000UG2T0F5"},
+  {id:1020,symbol:"VONT TURBOC XAU (ZRX6)",datum:"2026-03-05",ein:73.99,aus:75.44,menge:67,richtung:"kauf",notiz:"DE000VJ0ZRX6"},
+  {id:1021,symbol:"BNP TURBOL LCOF (797E3)",datum:"2026-03-11",ein:10.11,aus:13.15,menge:394,richtung:"kauf",notiz:"DE000PK797E3"},
+  {id:1022,symbol:"VONT TURBOC RHM (J1TBL6)",datum:"2026-03-02",ein:14.08,aus:6.22,menge:100,richtung:"kauf",notiz:"DE000VJ1TBL6"},
+  {id:1023,symbol:"VONT MINIL LCOF",datum:"2026-03-05",ein:12.44,aus:13.34,menge:239,richtung:"kauf",notiz:"DE000VJ66XW9"},
+  {id:1024,symbol:"ING TURBOL XAG (L8X2)",datum:"2026-03-04",ein:8.04,aus:9.41,menge:617,richtung:"kauf",notiz:"DE000NB5L8X2"},
+  {id:1025,symbol:"BNP MINIL LCOF (790X8)",datum:"2026-03-04",ein:10.25,aus:12.10,menge:288,richtung:"kauf",notiz:"DE000PK790X8"},
+  {id:1026,symbol:"JPM TURBOS XAG",datum:"2026-03-04",ein:10.11,aus:9.52,menge:392,richtung:"kauf",notiz:"DE000JZ703Z7"},
+  {id:1027,symbol:"ING TURBOL XAG (L8T0)",datum:"2026-03-04",ein:9.95,aus:7.05,menge:490,richtung:"kauf",notiz:"DE000NB5L8T0"},
+  {id:1028,symbol:"ING TURBOS XAG (RLP9)",datum:"2026-03-04",ein:10.8130,aus:11.43,menge:593,richtung:"kauf",notiz:"DE000NB5RLP9 – 454@10,82 + 139@10,80",ergebnis_fix:364.51},
+  {id:1029,symbol:"ING TURBOL LCOF (PYN1)",datum:"2026-03-04",ein:9.87,aus:10.60,menge:400,richtung:"kauf",notiz:"DE000NB5PYN1"},
+  {id:1030,symbol:"ING TURBOL XAG (GE58)",datum:"2026-03-03",ein:10.49,aus:13.08,menge:142,richtung:"kauf",notiz:"DE000NB5GE58"},
+  {id:1031,symbol:"JPM TURBOS DAX (JF3ZUD6)",datum:"2026-02-24",ein:35.58,aus:38.72,menge:41,richtung:"kauf",notiz:"DE000JF3ZUD6"},
+  {id:1032,symbol:"VONT MINIS XAU",datum:"2026-03-02",ein:43.95,aus:44.11,menge:25,richtung:"kauf",notiz:"DE000VJ33J48"},
+  {id:1033,symbol:"VONT MINIS Netflix",datum:"2026-02-27",ein:1.10,aus:1.19,menge:1000,richtung:"kauf",notiz:"DE000VJ0P7H4 – Basiswert: Netflix (Xetra: NFC)"},
+  {id:1034,symbol:"VONT TURBOC GC (J4PBD5)",datum:"2026-02-27",ein:63.53,aus:67.97,menge:31,richtung:"kauf",notiz:"DE000VJ4PBD5"},
+  {id:1035,symbol:"BNP MINIL LCOF (PK6ZJM8)",datum:"2026-02-24",ein:8.42,aus:8.80,menge:177,richtung:"kauf",notiz:"DE000PK6ZJM8"},
+  {id:1036,symbol:"BNP TURBOS DAX",datum:"2026-02-23",ein:63.42,aus:65.67,menge:31,richtung:"kauf",notiz:"DE000PJ5AK21"},
+  {id:1037,symbol:"BNP TURBOL LCOF (PG0XN48)",datum:"2026-02-20",ein:15.08,aus:15.83,menge:98,richtung:"kauf",notiz:"DE000PG0XN48"},
+  {id:1038,symbol:"VONT MINIL XAU",datum:"2026-02-19",ein:59.99,aus:65.76,menge:23,richtung:"kauf",notiz:"DE000VJ16026"},
+  {id:1039,symbol:"JPM TURBOS DAX (JX6FDT1)",datum:"2026-02-19",ein:31.28,aus:31.65,menge:38,richtung:"kauf",notiz:"DE000JX6FDT1"},
+  {id:1040,symbol:"BNP TURBOL B",datum:"2026-02-19",ein:14.97,aus:15.77,menge:100,richtung:"kauf",notiz:"DE000PH9JXT7"},
+  {id:1041,symbol:"ING TURBOS XAG (NB5FW32)",datum:"2026-02-18",ein:11.99,aus:11.15,menge:97,richtung:"kauf",notiz:"DE000NB5FW32"},
+  {id:1042,symbol:"JPM MINIS ENR",datum:"2026-02-18",ein:3.99,aus:4.30,menge:370,richtung:"kauf",notiz:"DE000JZ45KM2"},
+  {id:1043,symbol:"ING TURBOL XAG (NB4NQH7)",datum:"2026-02-17",ein:14.37,aus:16.88,menge:102,richtung:"kauf",notiz:"DE000NB4NQH7"},
+  {id:1044,symbol:"VONT TURBOC GC (VH4EST1)",datum:"2026-02-12",ein:96.54,aus:99.00,menge:11,richtung:"kauf",notiz:"DE000VH4EST1"},
+  {id:1045,symbol:"BNP MINIS SIE",datum:"2026-02-12",ein:6.76,aus:7.32,menge:220,richtung:"kauf",notiz:"DE000BY1NH40"},
+  {id:1046,symbol:"JPM TURBOL RHM",datum:"2026-02-06",ein:4.06,aus:4.35,menge:256,richtung:"kauf",notiz:"DE000JU9X5U4"},
+  {id:1047,symbol:"ING TURBOL XAG (NB4QFJ9)",datum:"2026-02-05",ein:14.50,aus:15.46,menge:137,richtung:"kauf",notiz:"DE000NB4QFJ9"},
+  {id:1048,symbol:"VONT TURBOP SI",datum:"2026-02-03",ein:22.55,aus:25.24,menge:46,richtung:"kauf",notiz:"DE000VJ4JLW7"},
+  {id:1049,symbol:"BNP MINIS XAG",datum:"2026-01-27",ein:16.54,aus:18.32,menge:62,richtung:"kauf",notiz:"DE000BY08Z44"},
+  // ── NEUE TRADES 18.–25.03.2026 ──
+  {id:3000,symbol:"BNP PAR.EHG TURBOL XAU",datum:"2026-03-18",ein:2956.71,aus:9259.78,menge:1,richtung:"kauf",notiz:"DE000BY1M3V7",ergebnis_fix:6303.07},
+  {id:3001,symbol:"BNP PAR.EHG TURBOL XAU",datum:"2026-03-19",ein:2485.8,aus:2502.0,menge:1,richtung:"kauf",notiz:"DE000BY2D1N8",ergebnis_fix:16.2},
+  {id:3002,symbol:"BNP PAR.EHG TURBOS XAU",datum:"2026-03-18",ein:5011.8,aus:5197.41,menge:1,richtung:"kauf",notiz:"DE000BY3CNM6",ergebnis_fix:185.61},
+  {id:3003,symbol:"BNP PAR.EHG TURBOS XAU",datum:"2026-03-19",ein:1971.81,aus:2208.99,menge:1,richtung:"kauf",notiz:"DE000BY3J1Y8",ergebnis_fix:237.18},
+  {id:3004,symbol:"HSBC T+B MINIL RHM",datum:"2026-03-23",ein:1989.93,aus:2608.04,menge:1,richtung:"kauf",notiz:"DE000HT4EPL8",ergebnis_fix:618.11},
+  {id:3005,symbol:"J.P.MORGAN TURBOS DAX",datum:"2026-03-23",ein:9775.62,aus:8382.45,menge:1,richtung:"kauf",notiz:"DE000JE03TQ8",ergebnis_fix:-1393.17},
+  {id:3006,symbol:"J.P.MORGAN TURBOS DAX",datum:"2026-03-24",ein:1996.62,aus:1892.83,menge:1,richtung:"kauf",notiz:"DE000JE0NNU8",ergebnis_fix:-103.79},
+  {id:3007,symbol:"JPM STR.PRO. TURBOL DAX",datum:"2026-03-19",ein:3001.5,aus:3006.72,menge:1,richtung:"kauf",notiz:"DE000JH0XN56",ergebnis_fix:5.22},
+  {id:3008,symbol:"JPM STR.PRO. TURBOL DAX",datum:"2026-03-19",ein:4956.39,aus:4530.96,menge:1,richtung:"kauf",notiz:"DE000JH1PU98",ergebnis_fix:-425.43},
+  {id:3009,symbol:"JPM STR.PRO. TURBOL XAU",datum:"2026-03-23",ein:2979.1,aus:3149.6,menge:1,richtung:"kauf",notiz:"DE000JU4VXK3",ergebnis_fix:170.5},
+  {id:3010,symbol:"JPM STR.PRO. TURBOL XAU",datum:"2026-03-23",ein:5037.78,aus:6264.5,menge:1,richtung:"kauf",notiz:"DE000JU6UC26",ergebnis_fix:1226.72},
+  {id:3011,symbol:"JPM STR.PRO. MINIL XAU",datum:"2026-03-25",ein:5524.88,aus:5580.86,menge:1,richtung:"kauf",notiz:"DE000JU7JJ31",ergebnis_fix:55.98},
+  {id:3012,symbol:"JPM STR.PRO. MINIL XAU",datum:"2026-03-24",ein:7002.01,aus:8522.02,menge:1,richtung:"kauf",notiz:"DE000JU7L1H6",ergebnis_fix:1520.01},
+  {id:3013,symbol:"JPM STR.PRO. TURBOL XAU",datum:"2026-03-24",ein:1981.85,aus:2061.15,menge:1,richtung:"kauf",notiz:"DE000JU9YZ14",ergebnis_fix:79.3},
+  {id:3014,symbol:"JPM STR.PRO. TURBOL XAU",datum:"2026-03-19",ein:6935.3,aus:6684.48,menge:1,richtung:"kauf",notiz:"DE000JZ21D85",ergebnis_fix:-250.82},
+  {id:3015,symbol:"JPM STR.PRO. TURBOL XAU",datum:"2026-03-19",ein:3007.2,aus:2986.2,menge:1,richtung:"kauf",notiz:"DE000JZ378M6",ergebnis_fix:-21.0},
+  {id:3016,symbol:"JPM STR.PRO. MINIL XAU",datum:"2026-03-25",ein:2970.08,aus:2848.48,menge:1,richtung:"kauf",notiz:"DE000JZ80SL4",ergebnis_fix:-121.6},
+  {id:3017,symbol:"JPM STR.PRO. MINIS XAU",datum:"2026-03-20",ein:2952.6,aus:3012.6,menge:1,richtung:"kauf",notiz:"DE000JZ88FD1",ergebnis_fix:60.0},
+  {id:3018,symbol:"JPM STR.PRO. TURBOS XAU",datum:"2026-03-23",ein:497.19,aus:516.06,menge:1,richtung:"kauf",notiz:"DE000JZ8ERJ9",ergebnis_fix:18.87},
+  {id:3019,symbol:"JPM STR.PRO. TURBOS XAU",datum:"2026-03-23",ein:4934.3,aus:4534.68,menge:1,richtung:"kauf",notiz:"DE000JZ8ERT8",ergebnis_fix:-399.62},
+  {id:3020,symbol:"ING BANK X-TUL DAX",datum:"2026-03-24",ein:2006.9,aus:2012.5,menge:1,richtung:"kauf",notiz:"DE000NB11KW6",ergebnis_fix:5.6},
+  {id:3021,symbol:"ING BANK X-TUS DAX",datum:"2026-03-20",ein:2979.42,aus:2886.6,menge:1,richtung:"kauf",notiz:"DE000NB246X4",ergebnis_fix:-92.82},
+  {id:3022,symbol:"ING BANK TURBOL XAG",datum:"2026-03-20",ein:2990.34,aus:2953.71,menge:1,richtung:"kauf",notiz:"DE000NB4TQX1",ergebnis_fix:-36.63},
+  {id:3023,symbol:"ING BANK TURBOS LCOF",datum:"2026-03-25",ein:2970.24,aus:3068.52,menge:1,richtung:"kauf",notiz:"DE000NB51JZ7",ergebnis_fix:98.28},
+  {id:3024,symbol:"ING BANK TURBOL XAU",datum:"2026-03-18",ein:2012.8,aus:2149.23,menge:1,richtung:"kauf",notiz:"DE000NB5GA60",ergebnis_fix:136.43},
+  {id:3025,symbol:"ING BANK TURBOL XAG",datum:"2026-03-19",ein:3944.24,aus:4206.49,menge:1,richtung:"kauf",notiz:"DE000NB5GF81",ergebnis_fix:262.25},
+  {id:3026,symbol:"ING BANK TURBOL XAG",datum:"2026-03-19",ein:4748.84,aus:4781.6,menge:1,richtung:"kauf",notiz:"DE000NB5GFN9",ergebnis_fix:32.76},
+  {id:3027,symbol:"ING BANK TURBOL XAG",datum:"2026-03-19",ein:3006.16,aus:1708.69,menge:1,richtung:"kauf",notiz:"DE000NB5GGC0",ergebnis_fix:-1297.47},
+  {id:3028,symbol:"ING BANK TURBOS DAX",datum:"2026-03-23",ein:4071.62,aus:4101.14,menge:1,richtung:"kauf",notiz:"DE000NB5QSX0",ergebnis_fix:29.52},
+  {id:3029,symbol:"ING BANK X-TUS DAX",datum:"2026-03-25",ein:1490.4,aus:1544.4,menge:1,richtung:"kauf",notiz:"DE000NB5T8D6",ergebnis_fix:54.0},
+  {id:3030,symbol:"ING BANK TURBOS LCOF",datum:"2026-03-18",ein:4975.96,aus:3315.73,menge:1,richtung:"kauf",notiz:"DE000NB5V8U6",ergebnis_fix:-1660.23},
+  {id:3031,symbol:"ING BANK TURBOS LCOF",datum:"2026-03-24",ein:1996.33,aus:1968.4,menge:1,richtung:"kauf",notiz:"DE000NB5V9W0",ergebnis_fix:-27.93},
+  {id:3032,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-20",ein:4776.0,aus:4488.0,menge:1,richtung:"kauf",notiz:"DE000NB5W0A4",ergebnis_fix:-288.0},
+  {id:3033,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-23",ein:9469.62,aus:11021.31,menge:1,richtung:"kauf",notiz:"DE000NB5W0T4",ergebnis_fix:1551.69},
+  {id:3034,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-23",ein:14254.55,aus:14979.57,menge:1,richtung:"kauf",notiz:"DE000NB5W1H7",ergebnis_fix:725.02},
+  {id:3035,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-18",ein:5008.02,aus:5053.06,menge:1,richtung:"kauf",notiz:"DE000NB5W1Y2",ergebnis_fix:45.04},
+  {id:3036,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-24",ein:4956.84,aus:5190.57,menge:1,richtung:"kauf",notiz:"DE000NB5W1Z9",ergebnis_fix:233.73},
+  {id:3037,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-24",ein:3008.88,aus:3220.56,menge:1,richtung:"kauf",notiz:"DE000NB5W2J1",ergebnis_fix:211.68},
+  {id:3038,symbol:"ING BANK TURBOS LCOF",datum:"2026-03-20",ein:6003.83,aus:6012.45,menge:1,richtung:"kauf",notiz:"DE000NB5WA03",ergebnis_fix:8.62},
+  {id:3039,symbol:"ING BANK TURBOS LCOF",datum:"2026-03-19",ein:4917.79,aus:5145.41,menge:1,richtung:"kauf",notiz:"DE000NB5WA60",ergebnis_fix:227.62},
+  {id:3040,symbol:"ING BANK TURBOS LCOF",datum:"2026-03-20",ein:7980.96,aus:7587.84,menge:1,richtung:"kauf",notiz:"DE000NB5WAC0",ergebnis_fix:-393.12},
+  {id:3041,symbol:"ING BANK TURBOS LCOF",datum:"2026-03-19",ein:12019.99,aus:12532.98,menge:1,richtung:"kauf",notiz:"DE000NB5WAL1",ergebnis_fix:512.99},
+  {id:3042,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-19",ein:8180.01,aus:4638.15,menge:1,richtung:"kauf",notiz:"DE000NB5WY05",ergebnis_fix:-3541.86},
+  {id:3043,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-23",ein:14189.34,aus:12714.7,menge:1,richtung:"kauf",notiz:"DE000NB5WZ79",ergebnis_fix:-1474.64},
+  {id:3044,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-20",ein:13826.3,aus:12118.48,menge:1,richtung:"kauf",notiz:"DE000NB5WZ87",ergebnis_fix:-1707.82},
+  {id:3045,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-20",ein:4944.24,aus:4949.28,menge:1,richtung:"kauf",notiz:"DE000NB5WZL8",ergebnis_fix:5.04},
+  {id:3047,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-18",ein:4989.99,aus:5750.47,menge:1,richtung:"kauf",notiz:"DE000NB5X1X3",ergebnis_fix:760.48},
+  {id:3048,symbol:"ING BANK TURBOS XAU",datum:"2026-03-25",ein:3013.0,aus:2880.52,menge:1,richtung:"kauf",notiz:"DE000NB5Y8U3",ergebnis_fix:-132.48},
+  {id:3049,symbol:"BNP PAR.EHG TURBOS DAX",datum:"2026-03-18",ein:3000.69,aus:3029.12,menge:1,richtung:"kauf",notiz:"DE000PK57FS3",ergebnis_fix:28.43},
+  {id:3050,symbol:"BNP PAR.EHG TURBOS LCOF",datum:"2026-03-19",ein:8492.4,aus:8669.94,menge:1,richtung:"kauf",notiz:"DE000PK8UZX8",ergebnis_fix:177.54},
+  {id:3051,symbol:"VONT.FINL PR TURBOC GC",datum:"2026-03-23",ein:5836.35,aus:5997.31,menge:1,richtung:"kauf",notiz:"DE000VH2F6K4",ergebnis_fix:160.96},
+  {id:3052,symbol:"VONT.FINL PR TURBOC XAU",datum:"2026-03-23",ein:2001.21,aus:2100.84,menge:1,richtung:"kauf",notiz:"DE000VH4CHU6",ergebnis_fix:99.63},
+  {id:3053,symbol:"VONT.FINL PR TURBOC GC",datum:"2026-03-19",ein:2524.79,aus:3172.61,menge:1,richtung:"kauf",notiz:"DE000VH8DWC2",ergebnis_fix:647.82},
+  {id:3054,symbol:"VONT.FINL PR TURBOC XAU",datum:"2026-03-19",ein:8948.8,aus:10084.3,menge:1,richtung:"kauf",notiz:"DE000VH9TFK4",ergebnis_fix:1135.5},
+  {id:3055,symbol:"VONT.FINL PR TURBOP DAX",datum:"2026-03-24",ein:5085.42,aus:5415.54,menge:1,richtung:"kauf",notiz:"DE000VJ67X56",ergebnis_fix:330.12},
+  {id:3056,symbol:"VONT.FINL PR TURBOP LCOF",datum:"2026-03-18",ein:2120.98,aus:2436.9,menge:1,richtung:"kauf",notiz:"DE000VJ72RE7",ergebnis_fix:315.92},
+  {id:3057,symbol:"VONT.FINL PR MINIS LCOF",datum:"2026-03-23",ein:3025.75,aus:2889.9,menge:1,richtung:"kauf",notiz:"DE000VJ76TF1",ergebnis_fix:-135.85},
+  {id:3058,symbol:"VONT.FINL PR TURBOP26 DAX",datum:"2026-03-23",ein:2940.35,aus:3074.89,menge:1,richtung:"kauf",notiz:"DE000VJ7V1M2",ergebnis_fix:134.54},
+  {id:3059,symbol:"VONT.FINL PR TURBOC LCOF",datum:"2026-03-19",ein:2676.12,aus:2814.54,menge:1,richtung:"kauf",notiz:"DE000VJ85B68",ergebnis_fix:138.42},
+  {id:3060,symbol:"VONT.FINL PR TURBOC LCOF",datum:"2026-03-19",ein:12550.36,aus:6651.0,menge:1,richtung:"kauf",notiz:"DE000VJ85E73",ergebnis_fix:-5899.36},
+  {id:3061,symbol:"VONT.FINL PR TURBOC LCOF",datum:"2026-03-24",ein:7265.94,aus:7812.68,menge:1,richtung:"kauf",notiz:"DE000VJ8ESM5",ergebnis_fix:546.74},
+  {id:3062,symbol:"VONT.FINL PR TURBOC LCOF",datum:"2026-03-24",ein:1161.56,aus:622.32,menge:1,richtung:"kauf",notiz:"DE000VJ8M5C4",ergebnis_fix:-539.24},
+  {id:3063,symbol:"VONT.FINL PR TURBOC LCOF",datum:"2026-03-25",ein:1965.81,aus:1965.81,menge:1,richtung:"kauf",notiz:"DE000VJ8M5G5",ergebnis_fix:0.0},
+  {id:3064,symbol:"VONT.FINL PR TURBOC LCOF",datum:"2026-03-24",ein:10977.49,aus:10451.24,menge:1,richtung:"kauf",notiz:"DE000VJ8M5N1",ergebnis_fix:-526.25},
+  {id:3065,symbol:"VONT.FINL PR MINIS XAU",datum:"2026-03-19",ein:6022.8,aus:6289.2,menge:1,richtung:"kauf",notiz:"DE000VJ8YA38",ergebnis_fix:266.4},
+  {id:3066,symbol:"VONT.FINL PR TURBOC DAX",datum:"2026-03-25",ein:2962.26,aus:3079.44,menge:1,richtung:"kauf",notiz:"DE000VJ9CXJ3",ergebnis_fix:117.18},
+  {id:3067,symbol:"VONT.FINL PR TURBOP26 XAU",datum:"2026-03-23",ein:576.57,aus:579.03,menge:1,richtung:"kauf",notiz:"DE000VJ9D1A7",ergebnis_fix:2.46},
+  {id:3068,symbol:"VONT.FINL PR TURBOP LCOF",datum:"2026-03-24",ein:1991.2,aus:1960.8,menge:1,richtung:"kauf",notiz:"DE000VJ9KH85",ergebnis_fix:-30.4},
+  {id:3069,symbol:"VONT.FINL PR TURBOP LCOF",datum:"2026-03-24",ein:3130.89,aus:3200.97,menge:1,richtung:"kauf",notiz:"DE000VJ9KJE6",ergebnis_fix:70.08},
+  {id:3070,symbol:"VONT.FINL PR TURBOP LCOF",datum:"2026-03-24",ein:5071.18,aus:4639.88,menge:1,richtung:"kauf",notiz:"DE000VJ9KMM3",ergebnis_fix:-431.3},
+  {id:3071,symbol:"VONT.FINL PR TURBOP XAU",datum:"2026-03-24",ein:1172.85,aus:1073.45,menge:1,richtung:"kauf",notiz:"DE000VJ9NUG2",ergebnis_fix:-99.4},
+  {id:3072,symbol:"VONT.FINL PR MINIL DAX",datum:"2026-03-23",ein:4995.96,aus:4763.4,menge:1,richtung:"kauf",notiz:"DE000VK14S96",ergebnis_fix:-232.56},
+  {id:3073,symbol:"VONT.FINL PR MINIL DAX",datum:"2026-03-23",ein:3007.84,aus:3011.36,menge:1,richtung:"kauf",notiz:"DE000VK14U84",ergebnis_fix:3.52},
+  {id:3074,symbol:"VONT.FINL PR TURBOC RHM",datum:"2026-03-23",ein:1175.05,aus:1251.02,menge:1,richtung:"kauf",notiz:"DE000VK2B2F1",ergebnis_fix:75.97},
+  // ── NEUE OFFENE POSITIONEN ──
+  {id:3046,symbol:"ING BANK TURBOL LCOF",datum:"2026-03-23",ein:7950.0,aus:null,menge:1,richtung:"kauf",notiz:"DE000NB5X137 – offen",offen:true},
+];
+
+// ── Ergebnis berechnen ──
+function calcEr(t){
+  if(t.offen||t.aus===null) return null;
+  if(t.ergebnis_fix!==undefined) return t.ergebnis_fix;
+  if(t.aus===0) return -t.ein;
+  return t.aus - t.ein;
+}
+function calcPct(t){
+  if(t.offen||t.aus===null||!t.ein) return null;
+  if(t.aus===0) return -100;
+  return (t.aus-t.ein)/t.ein*100;
+}
+
+// ── localStorage ──
+let trades = JSON.parse(localStorage.getItem('hb_v10')||'null');
+if(!trades){
+  trades = VORTRADES.map(t=>({...t,ergebnis:calcEr(t),prozent:calcPct(t)}));
+  localStorage.setItem('hb_v10',JSON.stringify(trades));
+}
+function save(){localStorage.setItem('hb_v10',JSON.stringify(trades));}
+
+// ── State ──
+let aktivFilter='alle', schlId=null, schlStat='geschlossen', editId=null;
+let aktivSym=null, tradeStatus='offen';
+
+// ── Init ──
+const heute = new Date().toISOString().split('T')[0];
+document.getElementById('fDatum').value = heute;
+document.getElementById('schlKurs').addEventListener('input', updateSchlPrev);
+document.getElementById('eEin').addEventListener('input', updateEditPrev);
+document.getElementById('eAus').addEventListener('input', updateEditPrev);
+document.getElementById('fEin').addEventListener('input', updateFVorschau);
+document.getElementById('fAus').addEventListener('input', updateFVorschau);
+
+// ── Navigation ──
+function goTab(id, el){
+  document.querySelectorAll('.seite').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.btab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('seite-'+id).classList.add('on');
+  el.classList.add('on');
+  if(id==='uebersicht') renderUebersicht();
+  if(id==='verlauf') renderVerlauf();
+}
+function goUebersicht(){
+  document.querySelectorAll('.seite').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.btab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('seite-uebersicht').classList.add('on');
+  document.getElementById('bt0').classList.add('on');
+  renderUebersicht();
+}
+
+// ── Helfer ──
+function pK(v){return parseFloat(String(v||'').replace(/\./g,'').replace(',','.').trim());}
+function fe(v,noKomma){
+  if(v===null||v===undefined) return '–';
+  const a=noKomma?Math.round(Math.abs(v)):Math.abs(v);
+  const s=noKomma?a.toLocaleString('de-DE'):a.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return (v<0?'− ':'+ ')+'€ '+s;
+}
+function toast(m){
+  const t=document.getElementById('toast');
+  t.textContent=m;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2400);
+}
+
+// ── Symbol-Buttons ──
+function setSymbol(s){
+  aktivSym=s;
+  ['DAX','Oel','Gold','Silb','Frei'].forEach(k=>document.getElementById('sym'+k).classList.remove('on'));
+  const map={DAX:'symDAX',Öl:'symOel',Gold:'symGold',Silber:'symSilb',frei:'symFrei'};
+  if(map[s]) document.getElementById(map[s]).classList.add('on');
+  document.getElementById('freifeld').style.display = s==='frei' ? '' : 'none';
+  if(s!=='frei') document.getElementById('freitext').value='';
+}
+
+// ── Status ──
+function setStat(s){
+  tradeStatus=s;
+  ['sBtnOffen','sBtnGeschlossen','sBtnTotal'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  const map={offen:'sBtnOffen',geschlossen:'sBtnGeschlossen',total:'sBtnTotal'};
+  document.getElementById(map[s]).classList.add('on');
+  document.getElementById('fAusWrap').style.display = s==='geschlossen'?'':'none';
+  document.getElementById('fVorschau').style.display='none';
+  if(s==='geschlossen') updateFVorschau();
+}
+
+function updateFVorschau(){
+  if(tradeStatus!=='geschlossen') return;
+  const ein=pK(document.getElementById('fEin').value);
+  const aus=pK(document.getElementById('fAus').value);
+  const box=document.getElementById('fVorschau');
+  if(isNaN(ein)||isNaN(aus)){box.style.display='none';return;}
+  const erg=aus-ein;
+  const pct=ein>0?(aus-ein)/ein*100:0;
+  box.style.display='block';
+  const be=document.getElementById('fVBetrag');
+  const pe=document.getElementById('fVPct');
+  be.style.color=erg>=0?'var(--g)':'var(--v)';
+  be.textContent=fe(erg);
+  pe.style.color=erg>=0?'var(--g)':'var(--v)';
+  pe.textContent=(erg>=0?'+':'')+pct.toFixed(1)+'%';
+}
+
+// ── Trade speichern ──
+function speichereTrade(){
+  let symbol = aktivSym==='frei'
+    ? document.getElementById('freitext').value.trim().toUpperCase()
+    : aktivSym;
+  if(!symbol){toast('⚠️ Bitte Basiswert wählen');return;}
+  const datum = document.getElementById('fDatum').value;
+  const einRaw = document.getElementById('fEin').value;
+  const notiz = document.getElementById('fNotiz').value.trim();
+  if(!datum||!einRaw){toast('⚠️ Datum und Kaufpreis angeben');return;}
+  const ein = pK(einRaw);
+  if(isNaN(ein)||ein<=0){toast('⚠️ Ungültiger Kaufpreis');return;}
+  let aus=null,ergebnis=null,prozent=null,offen=true;
+  if(tradeStatus==='total'){
+    aus=0;ergebnis=-ein;prozent=-100;offen=false;
+  } else if(tradeStatus==='geschlossen'){
+    const ausRaw=document.getElementById('fAus').value;
+    aus=pK(ausRaw);
+    if(isNaN(aus)||aus<=0){toast('⚠️ Ungültiger Verkaufspreis');return;}
+    ergebnis=aus-ein;prozent=(aus-ein)/ein*100;offen=false;
+  }
+  trades.unshift({id:Date.now(),symbol,datum,ein,aus,menge:1,richtung:'kauf',ergebnis,prozent,notiz,offen});
+  save();
+  ['fEin','fAus','fNotiz'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fVorschau').style.display='none';
+  document.getElementById('fDatum').value=heute;
+  // Symbol Reset
+  ['DAX','Oel','Gold','Silb','Frei'].forEach(k=>document.getElementById('sym'+k).classList.remove('on'));
+  document.getElementById('freifeld').style.display='none';
+  aktivSym=null;
+  setStat('offen');
+  goUebersicht();
+  toast(offen?'🟡 Offen gespeichert':ergebnis>=0?'✅ Gespeichert!':'❌ Gespeichert');
+}
+
+// ── Löschen ──
+function delTrade(id){
+  if(!confirm('Eintrag löschen?')) return;
+  trades=trades.filter(t=>t.id!==id);
+  save();renderUebersicht();renderVerlauf();
+  toast('🗑️ Gelöscht');
+}
+
+// ── Schließen Modal ──
+function openSchl(id){
+  const t=trades.find(x=>x.id===id);if(!t)return;
+  schlId=id;schlStat='geschlossen';
+  document.getElementById('schlTitel').textContent=t.symbol+' schließen';
+  document.getElementById('schlInfo').textContent=
+    'Kaufpreis: '+fe(t.ein)+' · '+new Date(t.datum).toLocaleDateString('de-DE');
+  document.getElementById('schlKurs').value='';
+  document.getElementById('schlPrev').style.display='none';
+  document.getElementById('schlKursWrap').style.display='';
+  document.getElementById('mBtnG').classList.add('on');
+  document.getElementById('mBtnT').classList.remove('on');
+  document.getElementById('schlModal').classList.add('on');
+}
+function setSchlStat(s){
+  schlStat=s;
+  document.getElementById('mBtnG').className='sbtn'+(s==='geschlossen'?' on':'');
+  document.getElementById('mBtnT').className='sbtn'+(s==='total'?' on':'');
+  document.getElementById('schlKursWrap').style.display=s==='geschlossen'?'':'none';
+  if(s==='total'){
+    const t=trades.find(x=>x.id===schlId);
+    const p=document.getElementById('schlPrev');
+    p.style.display='block';p.style.background='var(--vb)';p.style.color='var(--v)';
+    p.textContent='💀 Totalverlust: '+fe(t?-t.ein:0);
+  } else document.getElementById('schlPrev').style.display='none';
+}
+function updateSchlPrev(){
+  if(schlStat!=='geschlossen') return;
+  const t=trades.find(x=>x.id===schlId);if(!t)return;
+  const aus=pK(document.getElementById('schlKurs').value);
+  const p=document.getElementById('schlPrev');
+  if(isNaN(aus)||aus<=0){p.style.display='none';return;}
+  const erg=aus-t.ein;
+  p.style.display='block';
+  p.style.background=erg>=0?'var(--gb)':'var(--vb)';
+  p.style.color=erg>=0?'var(--g)':'var(--v)';
+  p.textContent=fe(erg);
+}
+function bestSchl(){
+  const t=trades.find(x=>x.id===schlId);if(!t)return;
+  if(schlStat==='total'){
+    t.aus=0;t.offen=false;t.ergebnis=-t.ein;t.prozent=-100;
+    toast('💀 Totalverlust: '+fe(t.ergebnis));
+  } else {
+    const aus=pK(document.getElementById('schlKurs').value);
+    if(isNaN(aus)||aus<=0){toast('⚠️ Gültigen Verkaufspreis eingeben');return;}
+    t.aus=aus;t.offen=false;t.ergebnis=aus-t.ein;t.prozent=(aus-t.ein)/t.ein*100;
+    toast(t.ergebnis>=0?'✅ Geschlossen: '+fe(t.ergebnis):'❌ Geschlossen: '+fe(t.ergebnis));
+  }
+  save();
+  document.getElementById('schlModal').classList.remove('on');
+  renderUebersicht();renderVerlauf();
+}
+
+// ── Bearbeiten Modal ──
+function openEdit(id){
+  const t=trades.find(x=>x.id===id);if(!t)return;
+  editId=id;
+  document.getElementById('editTitel').textContent='✏️ '+t.symbol;
+  document.getElementById('editInfo').textContent=
+    new Date(t.datum).toLocaleDateString('de-DE')+' · '+(t.richtung==='kauf'?'Kauf':'Leer');
+  document.getElementById('eSymbol').value=t.symbol;
+  document.getElementById('eEin').value=String(t.ein).replace('.',',');
+  document.getElementById('eAus').value=t.aus!==null?String(t.aus).replace('.',','):'';
+  document.getElementById('eNotiz').value=t.notiz||'';
+  updateEditPrev();
+  document.getElementById('editModal').classList.add('on');
+}
+function updateEditPrev(){
+  const t=trades.find(x=>x.id===editId);if(!t)return;
+  const ein=pK(document.getElementById('eEin').value);
+  const aus=pK(document.getElementById('eAus').value);
+  const p=document.getElementById('editPrev');
+  if(isNaN(ein)||isNaN(aus)){p.style.display='none';return;}
+  const erg=aus===0?-ein:aus-ein;
+  p.style.display='block';
+  p.style.background=erg>=0?'var(--gb)':'var(--vb)';
+  p.style.color=erg>=0?'var(--g)':'var(--v)';
+  p.textContent=fe(erg);
+}
+function bestEdit(){
+  const t=trades.find(x=>x.id===editId);if(!t)return;
+  const symbol=document.getElementById('eSymbol').value.trim().toUpperCase();
+  const ein=pK(document.getElementById('eEin').value);
+  const ausVal=document.getElementById('eAus').value.trim();
+  const notiz=document.getElementById('eNotiz').value.trim();
+  if(!symbol||isNaN(ein)){toast('⚠️ Symbol und Kaufpreis angeben');return;}
+  t.symbol=symbol;t.ein=ein;t.notiz=notiz;
+  delete t.ergebnis_fix;
+  if(ausVal===''){
+    t.aus=null;t.offen=true;t.ergebnis=null;t.prozent=null;
+  } else {
+    const aus=pK(ausVal);
+    if(isNaN(aus)){toast('⚠️ Ungültiger Verkaufspreis');return;}
+    t.aus=aus;t.offen=false;
+    t.ergebnis=aus===0?-ein:aus-ein;
+    t.prozent=aus===0?-100:(aus-ein)/ein*100;
+  }
+  save();
+  document.getElementById('editModal').classList.remove('on');
+  renderUebersicht();renderVerlauf();
+  toast('✅ Aktualisiert');
+}
+
+// ── Filter ──
+function setFilter(f,el){
+  aktivFilter=f;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderVerlauf();
+}
+
+// ── Basiswert erkennen ──
+function erkBW(sym,notiz){
+  const s=(sym+' '+(notiz||'')).toUpperCase();
+  if(/XAU|GOLD| GC|TURBOL XAU|TURBOC XAU|TURBOS XAU|MINIL XAU|MINIS XAU/.test(s)) return 'Gold (XAU)';
+  if(/XAG|SILBER|TURBOL XAG|TURBOS XAG|MINIL XAG|MINIS XAG|TURBOP26 XAG/.test(s)) return 'Silber (XAG)';
+  if(/DAX/.test(s)) return 'DAX';
+  if(/RHM|RHEINMETALL/.test(s)) return 'Rheinmetall';
+  if(/LCOF|TURBOL LCOF|TURBOS LCOF|TURBOC LCOF|TURBOP LCOF|MINIS LCOF|MINIL LCOF/.test(s)) return 'Öl (LCOF)';
+  if(/BTC|BITCOIN/.test(s)) return 'Bitcoin';
+  if(/NETFLIX|NFLX|NFC/.test(s)) return 'Netflix';
+  if(/SIE|SIEMEN/.test(s)) return 'Siemens';
+  if(/ENR/.test(s)) return 'Energie';
+  return 'Sonstige';
+}
+
+// ── ISO-Woche ──
+function isoKW(datum){
+  const d=new Date(datum);d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+4-(d.getDay()||7));
+  const y=d.getFullYear();
+  const start=new Date(y,0,1);
+  const kw=Math.ceil((((d-start)/86400000)+1)/7);
+  return y+'-KW'+String(kw).padStart(2,'0');
+}
+function kwLabel(key){
+  const[y,kw]=key.split('-KW');const kwNum=parseInt(kw);
+  const jan1=new Date(parseInt(y),0,1);
+  const mon=new Date(jan1.getTime()+(kwNum-1)*7*86400000);
+  mon.setDate(mon.getDate()-(mon.getDay()===0?6:mon.getDay()-1));
+  const fri=new Date(mon.getTime()+4*86400000);
+  const f=d=>d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
+  return 'KW '+kwNum+' · '+f(mon)+' – '+f(fri);
+}
+
+// ── Perioden HTML ──
+function periodenHTML(eintraege,labelFn){
+  if(!eintraege.length) return '<div style="color:var(--muted);font-size:13px;font-weight:500">Keine Daten.</div>';
+  const maxA=Math.max(...eintraege.map(e=>Math.abs(e.pl)),1);
+  return eintraege.map(e=>{
+    const pos=e.pl>=0;
+    const bw=Math.round(Math.abs(e.pl)/maxA*100);
+    return '<div class="prow"><div class="phead">'+
+      '<span class="plabel">'+labelFn(e)+'</span>'+
+      '<span class="pval" style="color:'+(pos?'var(--g)':'var(--v)')+'">'+fe(e.pl,true)+'</span>'+
+      '</div><div class="pbar-wrap">'+
+      '<div class="pbar-bg"><div class="pbar-fill" style="width:'+bw+'%;background:'+(pos?'var(--g)':'var(--v)')+'"></div></div>'+
+      '<span class="pmeta">'+e.anzahl+' · '+e.tq+'% TQ</span>'+
+      '</div></div>';
+  }).join('');
+}
+
+// ── Übersicht rendern ──
+function renderUebersicht(){
+  const abg=trades.filter(t=>!t.offen&&t.ergebnis!==null);
+  const offn=trades.filter(t=>t.offen);
+  const gew=abg.filter(t=>t.ergebnis>0);
+  const verl=abg.filter(t=>t.ergebnis<0);
+  const gesamt=abg.reduce((s,t)=>s+t.ergebnis,0);
+  const tq=abg.length?Math.round(gew.length/abg.length*100):0;
+
+  // KPI 1
+  const kgv=document.getElementById('kGesamtVal');
+  kgv.textContent=fe(gesamt,true);
+  kgv.className='kv '+(gesamt>=0?'g':'v');
+  document.getElementById('kGesamtSub').textContent=abg.length+' Trades · '+gew.length+' Gew · '+verl.length+' Verl';
+  document.getElementById('kTQ').textContent=tq+'%';
+  document.getElementById('kTQBar').style.width=tq+'%';
+  document.getElementById('kAnzahl').textContent=abg.length;
+  document.getElementById('kOffenSub').textContent=offn.length?offn.length+' offen':'Keine offenen';
+
+  // Heute / Woche / Monat
+  const todayStr=new Date().toISOString().split('T')[0];
+  const todayKW=isoKW(todayStr);
+  const todayMon=todayStr.substring(0,7);
+
+  const tHeute=abg.filter(t=>t.datum===todayStr);
+  const tWoche=abg.filter(t=>isoKW(t.datum)===todayKW);
+  const tMonat=abg.filter(t=>t.datum.substring(0,7)===todayMon);
+
+  const plH=tHeute.reduce((s,t)=>s+t.ergebnis,0);
+  const plW=tWoche.reduce((s,t)=>s+t.ergebnis,0);
+  const plM=tMonat.reduce((s,t)=>s+t.ergebnis,0);
+
+  const kH=document.getElementById('kHeute');
+  kH.textContent=tHeute.length?fe(plH,true):'–';
+  kH.className='kv '+(tHeute.length?(plH>=0?'g':'v'):'o');
+  document.getElementById('kHeuteSub').textContent=tHeute.length?tHeute.length+' Trade(s)':'Noch keine';
+
+  const kW=document.getElementById('kWoche');
+  kW.textContent=tWoche.length?fe(plW,true):'–';
+  kW.className='kv '+(tWoche.length?(plW>=0?'g':'v'):'o');
+  document.getElementById('kWocheSub').textContent=tWoche.length?tWoche.length+' Trade(s)':'Noch keine';
+
+  const kM=document.getElementById('kMonat');
+  kM.textContent=tMonat.length?fe(plM,true):'–';
+  kM.className='kv '+(tMonat.length?(plM>=0?'g':'v'):'o');
+  document.getElementById('kMonatSub').textContent=tMonat.length?tMonat.length+' Trade(s)':'Noch keine';
+
+  // Ø Tag/Woche/Monat
+  const tage=new Set(abg.map(t=>t.datum)).size;
+  const wochen=new Set(abg.map(t=>isoKW(t.datum))).size;
+  const monate=new Set(abg.map(t=>t.datum.substring(0,7))).size;
+  const avT=tage?gesamt/tage:null;
+  const avW=wochen?gesamt/wochen:null;
+  const avM=monate?gesamt/monate:null;
+  const at=document.getElementById('kAvgTag');
+  at.textContent=avT!==null?fe(avT,true):'–';
+  at.className='kv '+(avT!==null?(avT>=0?'g':'v'):'o');
+  document.getElementById('kAvgTagSub').textContent=tage+' Handelstage';
+  const aw=document.getElementById('kAvgWoche');
+  aw.textContent=avW!==null?fe(avW,true):'–';
+  aw.className='kv '+(avW!==null?(avW>=0?'g':'v'):'o');
+  const am=document.getElementById('kAvgMonat');
+  am.textContent=avM!==null?fe(avM,true):'–';
+  am.className='kv '+(avM!==null?(avM>=0?'g':'v'):'o');
+
+  // Wochen
+  const wMap={};
+  abg.forEach(t=>{
+    const k=isoKW(t.datum);
+    if(!wMap[k]) wMap[k]={pl:0,anzahl:0,gew:0};
+    wMap[k].pl+=t.ergebnis;wMap[k].anzahl++;
+    if(t.ergebnis>0)wMap[k].gew++;
+  });
+  const wE=Object.entries(wMap).sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([k,v])=>({key:k,pl:v.pl,anzahl:v.anzahl,tq:Math.round(v.gew/v.anzahl*100)}));
+  document.getElementById('wochenStats').innerHTML=periodenHTML(wE,e=>kwLabel(e.key));
+
+  // Monate
+  const mn=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  const mMap={};
+  abg.forEach(t=>{
+    const k=t.datum.substring(0,7);
+    if(!mMap[k]) mMap[k]={pl:0,anzahl:0,gew:0};
+    mMap[k].pl+=t.ergebnis;mMap[k].anzahl++;
+    if(t.ergebnis>0)mMap[k].gew++;
+  });
+  const mE=Object.entries(mMap).sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([k,v])=>{const[y,m]=k.split('-');return{key:k,label:mn[parseInt(m)-1]+' '+y,pl:v.pl,anzahl:v.anzahl,tq:Math.round(v.gew/v.anzahl*100)};});
+  document.getElementById('monatsStats').innerHTML=periodenHTML(mE,e=>e.label);
+
+  // Basiswert
+  const bwMap={};
+  abg.forEach(t=>{
+    const bw=erkBW(t.symbol,t.notiz);
+    if(!bwMap[bw]) bwMap[bw]={pl:0,anzahl:0,gew:0};
+    bwMap[bw].pl+=t.ergebnis;bwMap[bw].anzahl++;
+    if(t.ergebnis>0)bwMap[bw].gew++;
+  });
+  const bwE=Object.entries(bwMap).sort((a,b)=>b[1].pl-a[1].pl)
+    .map(([k,v])=>({key:k,label:k,pl:v.pl,anzahl:v.anzahl,tq:Math.round(v.gew/v.anzahl*100)}));
+  document.getElementById('bwStats').innerHTML=periodenHTML(bwE,e=>e.label);
+}
+
+// ── Verlauf rendern ──
+function renderVerlauf(){
+  const offn=trades.filter(t=>t.offen);
+  const ok=document.getElementById('offeneKarte');
+  const ol=document.getElementById('offeneListe');
+  if(!offn.length){ok.style.display='none';}
+  else{
+    ok.style.display='';
+    ol.innerHTML=offn.map(t=>{
+      const dat=new Date(t.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      return '<div class="orow">'+
+        '<div class="rbadge kauf">▲</div>'+
+        '<div style="flex:1;min-width:0"><div class="osym">'+t.symbol+'</div>'+
+        '<div class="osub">'+dat+' · Einsatz '+fe(t.ein)+'</div></div>'+
+        '<div class="obetrag">− '+fe(t.ein)+'</div>'+
+        '<button class="btn orange sm" onclick="openSchl('+t.id+')">Schließen</button>'+
+        '<button class="del-btn" onclick="delTrade('+t.id+')">×</button>'+
+        '</div>';
+    }).join('');
+  }
+
+  let abg=trades.filter(t=>!t.offen&&t.ergebnis!==null);
+  if(aktivFilter==='gewinn') abg=abg.filter(t=>t.ergebnis>0);
+  else if(aktivFilter==='verlust') abg=abg.filter(t=>t.ergebnis<0);
+
+  document.getElementById('vAnzahl').textContent=abg.length+' Einträge';
+  const tbody=document.getElementById('vBody');
+  if(!abg.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);font-weight:600">Keine Einträge</td></tr>';
+    return;
+  }
+  tbody.innerHTML=abg.map(t=>{
+    const ec=t.ergebnis>=0?'tg':'tv';
+    const erg=(t.ergebnis>=0?'+ ':'− ')+'€ '+Math.round(Math.abs(t.ergebnis)).toLocaleString('de-DE');
+    const dat=new Date(t.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const ausStr=t.aus===0?'💀 0':(t.aus!==null?'€ '+Math.round(t.aus).toLocaleString('de-DE'):'–');
+    return '<tr>'+
+      '<td>'+dat+'</td>'+
+      '<td><span class="tsym">'+t.symbol+'</span><span class="tnotiz">'+(t.notiz||'')+'</span></td>'+
+      '<td class="hide-m"><span class="chip kauf">▲</span></td>'+
+      '<td style="text-align:right">€ '+Math.round(t.ein).toLocaleString('de-DE')+'</td>'+
+      '<td style="text-align:right">'+ausStr+'</td>'+
+      '<td style="text-align:right" class="'+ec+'">'+erg+'</td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="btn ghost sm" onclick="openEdit('+t.id+')" style="margin-right:3px">✏️</button>'+
+        '<button class="del-btn" onclick="delTrade('+t.id+')">×</button>'+
+      '</td></tr>';
+  }).join('');
+}
+
+// ── iPad / Download ──
+function zeigeIpadModal(){document.getElementById('ipadModal').classList.add('on');}
+function download(){
+  const html=document.documentElement.outerHTML;
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='index.html';a.click();
+  URL.revokeObjectURL(url);
+  toast('⬇ Download gestartet');
+}
+
+// ── CSV ──
+function exportCSV(){
+  const h='Datum;Symbol;Kaufpreis;Verkaufspreis;Ergebnis EUR;Notiz';
+  const rows=trades.map(t=>[
+    t.datum,t.symbol,
+    t.ein.toFixed(2),
+    t.aus!==null?t.aus.toFixed(2):'offen',
+    t.ergebnis!==null?Math.round(t.ergebnis):'offen',
+    t.notiz||''
+  ].join(';'));
+  const blob=new Blob([[h].concat(rows).join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='handelstagebuch.csv';a.click();
+  toast('⬇ CSV exportiert');
+}
+
+renderUebersicht();
+</script>
+</body>
+</html>
